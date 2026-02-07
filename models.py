@@ -76,7 +76,6 @@ class User(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
-    # Relationships
     tokens = relationship("Token", back_populates="user")
     doctor_profile = relationship(
         "DoctorProfile",
@@ -178,6 +177,46 @@ class Token(Base):
     user = relationship("User", back_populates="tokens")
     queue = relationship("Queue", back_populates="tokens")
     audit_logs = relationship("AuditLog", back_populates="token")
+
+    # ======================================================
+    # FRONTEND COMPATIBILITY (DO NOT REMOVE)
+    # ======================================================
+
+    @property
+    def frontend_id(self):
+        # frontend expects: id
+        return self.token_number
+
+    @property
+    def frontend_type(self):
+        # frontend expects: type
+        return self.domain.value if self.domain else None
+
+    @property
+    def estimatedWait(self):
+        # frontend expects: estimatedWait
+        return self.estimated_wait_time
+
+    @property
+    def frontend_priority(self):
+        # frontend uses: emergency | senior | normal
+        if self.priority == PriorityLevel.EMERGENCY:
+            return "emergency"
+        if self.priority in (PriorityLevel.HIGH, PriorityLevel.MEDIUM):
+            return "senior"
+        return "normal"
+
+    @property
+    def department(self):
+        # frontend expects department directly
+        return self.queue.department if self.queue else None
+
+    @property
+    def doctor(self):
+        # frontend expects doctor as string
+        if self.queue and self.queue.doctor and self.queue.doctor.user:
+            return self.queue.doctor.user.full_name
+        return "Any Available"
 
 
 # ======================================================
