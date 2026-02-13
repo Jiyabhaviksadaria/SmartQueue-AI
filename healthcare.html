@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="SmartQueue AI Healthcare - Get your virtual queue token for hospitals and clinics with AI-predicted wait times.">
+    <title>Healthcare Queue - SmartQueue AI</title>
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages/healthcare.css">
+
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
+</head>
+
+<body class="healthcare-page">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="navbar-logo">
+                <div class="navbar-logo-icon">🚀</div>
+                <span>SmartQueue<span class="text-gradient">AI</span></span>
+            </a>
+
+            <ul class="navbar-nav">
+                <li><a href="index.html" class="navbar-link">Home</a></li>
+                <li><a href="healthcare.html" class="navbar-link active">Healthcare</a></li>
+                <li><a href="banking.html" class="navbar-link">Banking</a></li>
+                <li><a href="tracking.html" class="navbar-link">Track Queue</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="page-header-content animate animate-fade-in-up">
+            <span class="page-icon">🏥</span>
+            <h1 class="page-title">
+                <span class="highlight">Healthcare</span> Queue
+            </h1>
+            <p class="page-subtitle">Get your virtual token for hospitals, clinics, and medical facilities</p>
+        </div>
+    </header>
+
+    <!-- Queue Form -->
+    <main class="queue-form-container">
+        <!-- Step Progress -->
+        <div class="step-progress animate animate-fade-in delay-200">
+            <div class="step-indicator">
+                <div class="step-dot active" data-step="1">1</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-indicator">
+                <div class="step-dot" data-step="2">2</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-indicator">
+                <div class="step-dot" data-step="3">3</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-indicator">
+                <div class="step-dot" data-step="4">4</div>
+            </div>
+        </div>
+
+        <form id="healthcare-form">
+            <!-- Step 1: Department Selection -->
+            <section class="form-section active" data-step="1">
+                <h2 class="form-section-title">Select Department</h2>
+                <p class="form-section-subtitle">Choose the department you need to visit</p>
+
+                <div class="department-grid">
+                    <div class="department-card" data-department="opd">
+                        <div class="department-icon">🩺</div>
+                        <div class="department-name">OPD</div>
+                        <div class="department-queue">Current Queue: <strong>12</strong></div>
+                    </div>
+
+                    <div class="department-card" data-department="emergency">
+                        <div class="department-icon">🚨</div>
+                        <div class="department-name">Emergency</div>
+                        <div class="department-queue">Current Queue: <strong>3</strong></div>
+                    </div>
+
+                    <div class="department-card" data-department="lab">
+                        <div class="department-icon">🔬</div>
+                        <div class="department-name">Laboratory</div>
+                        <div class="department-queue">Current Queue: <strong>8</strong></div>
+                    </div>
+
+                    <div class="department-card" data-department="pharmacy">
+                        <div class="department-icon">💊</div>
+                        <div class="department-name">Pharmacy</div>
+                        <div class="department-queue">Current Queue: <strong>15</strong></div>
+                    </div>
+
+                    <div class="department-card" data-department="radiology">
+                        <div class="department-icon">📷</div>
+                        <div class="department-name">Radiology</div>
+                        <div class="department-queue">Current Queue: <strong>5</strong></div>
+                    </div>
+
+                    <div class="department-card" data-department="cardiology">
+                        <div class="department-icon">❤️</div>
+                        <div class="department-name">Cardiology</div>
+                        <div class="department-queue">Current Queue: <strong>7</strong></div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <span></span>
+                    <button type="button" class="btn btn-healthcare btn-lg next-step" disabled>
+                        Next: Select Doctor
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Step 2: Doctor Selection -->
+            <section class="form-section" data-step="2">
+                <h2 class="form-section-title">Select Doctor</h2>
+                <p class="form-section-subtitle">Choose your preferred doctor or select "Any Available"</p>
+
+                <div class="doctor-grid" id="doctor-grid">
+                    <div class="doctor-card" data-doctor="any">
+                        <div class="doctor-avatar">👤</div>
+                        <div class="doctor-info">
+                            <div class="doctor-name">Any Available Doctor</div>
+                            <div class="doctor-specialty">Fastest Queue</div>
+                            <div class="doctor-status">
+                                <span class="status-indicator"></span>
+                                <span>~8 min wait</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="doctor-card" data-doctor="dr-sharma">
+                        <div class="doctor-avatar">👨‍⚕️</div>
+                        <div class="doctor-info">
+                            <div class="doctor-name">Dr. Rajesh Sharma</div>
+                            <div class="doctor-specialty">General Medicine</div>
+                            <div class="doctor-status">
+                                <span class="status-indicator"></span>
+                                <span>~15 min wait</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="doctor-card" data-doctor="dr-patel">
+                        <div class="doctor-avatar">👩‍⚕️</div>
+                        <div class="doctor-info">
+                            <div class="doctor-name">Dr. Priya Patel</div>
+                            <div class="doctor-specialty">Internal Medicine</div>
+                            <div class="doctor-status">
+                                <span class="status-indicator busy"></span>
+                                <span>~25 min wait</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="doctor-card" data-doctor="dr-kumar">
+                        <div class="doctor-avatar">👨‍⚕️</div>
+                        <div class="doctor-info">
+                            <div class="doctor-name">Dr. Anil Kumar</div>
+                            <div class="doctor-specialty">Family Medicine</div>
+                            <div class="doctor-status">
+                                <span class="status-indicator"></span>
+                                <span>~12 min wait</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary prev-step">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                        </svg>
+                        Back
+                    </button>
+                    <button type="button" class="btn btn-healthcare btn-lg next-step" disabled>
+                        Next: Priority
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Step 3: Priority Selection -->
+            <section class="form-section" data-step="3">
+                <h2 class="form-section-title">Select Priority</h2>
+                <p class="form-section-subtitle">Choose your priority level - please be honest</p>
+
+                <div class="priority-grid">
+                    <div class="priority-card emergency" data-priority="emergency">
+                        <div class="priority-icon">🚨</div>
+                        <div class="priority-name">Emergency</div>
+                        <div class="priority-desc">Critical condition requiring immediate attention</div>
+                    </div>
+
+                    <div class="priority-card senior" data-priority="senior">
+                        <div class="priority-icon">👴</div>
+                        <div class="priority-name">Senior Citizen</div>
+                        <div class="priority-desc">Age 60+ or persons with disabilities</div>
+                    </div>
+
+                    <div class="priority-card normal" data-priority="normal">
+                        <div class="priority-icon">👤</div>
+                        <div class="priority-name">Regular</div>
+                        <div class="priority-desc">Standard consultation or checkup</div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary prev-step">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                        </svg>
+                        Back
+                    </button>
+                    <button type="button" class="btn btn-healthcare btn-lg next-step" disabled>
+                        Next: Your Details
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Step 4: Patient Details -->
+            <section class="form-section" data-step="4">
+                <h2 class="form-section-title">Your Details</h2>
+                <p class="form-section-subtitle">Enter your information to get your token</p>
+
+                <div class="patient-form">
+                    <div class="form-group">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" class="form-input" id="patient-name" placeholder="Enter your full name"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Phone Number *</label>
+                        <input type="tel" class="form-input" id="patient-phone" placeholder="10-digit mobile number"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Age</label>
+                        <input type="number" class="form-input" id="patient-age" placeholder="Your age" min="1"
+                            max="120">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select class="form-select" id="patient-gender">
+                            <option value="">Select gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">Reason for Visit</label>
+                        <div class="quick-reasons">
+                            <span class="reason-tag" data-reason="General Checkup">General Checkup</span>
+                            <span class="reason-tag" data-reason="Fever/Cold">Fever/Cold</span>
+                            <span class="reason-tag" data-reason="Follow-up">Follow-up</span>
+                            <span class="reason-tag" data-reason="Lab Report">Lab Report</span>
+                            <span class="reason-tag" data-reason="Prescription">Prescription</span>
+                        </div>
+                        <input type="text" class="form-input mt-2" id="patient-reason"
+                            placeholder="Or type your reason...">
+                    </div>
+                </div>
+
+                <!-- Summary -->
+                <div class="summary-card mt-8">
+                    <h3 style="margin-bottom: var(--space-4);">Booking Summary</h3>
+                    <div class="summary-row">
+                        <span class="summary-label">Department</span>
+                        <span class="summary-value" id="summary-department">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Doctor</span>
+                        <span class="summary-value" id="summary-doctor">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Priority</span>
+                        <span class="summary-value healthcare-color" id="summary-priority">-</span>
+                    </div>
+                </div>
+
+                <div class="estimated-wait">
+                    <div class="wait-time-large" id="estimated-time">~12</div>
+                    <div class="wait-info">
+                        <div class="wait-info-label">Estimated Wait Time (minutes)</div>
+                        <div class="wait-info-ai">🤖 AI Predicted • 90% accuracy</div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary prev-step">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                        </svg>
+                        Back
+                    </button>
+                    <button type="submit" class="btn btn-healthcare btn-lg">
+                        🎫 Get My Token
+                    </button>
+                </div>
+            </section>
+        </form>
+    </main>
+
+    <script src="js/main.js"></script>
+    <script src="js/queue.js"></script>
+    <script>
+        // Healthcare Form Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('healthcare-form');
+            let currentStep = 1;
+            let formData = {
+                department: null,
+                doctor: null,
+                priority: null
+            };
+
+            // Step navigation
+            function updateStep(step) {
+                currentStep = step;
+
+                // Update sections
+                document.querySelectorAll('.form-section').forEach((section, idx) => {
+                    section.classList.toggle('active', idx + 1 === step);
+                });
+
+                // Update progress dots
+                document.querySelectorAll('.step-dot').forEach((dot, idx) => {
+                    dot.classList.remove('active', 'completed');
+                    if (idx + 1 < step) dot.classList.add('completed');
+                    if (idx + 1 === step) dot.classList.add('active');
+                });
+
+                // Update progress lines
+                document.querySelectorAll('.step-line').forEach((line, idx) => {
+                    line.classList.toggle('completed', idx + 1 < step);
+                });
+
+                // Scroll to top of form
+                document.querySelector('.queue-form-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            // Department selection
+            document.querySelectorAll('.department-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    document.querySelectorAll('.department-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    formData.department = card.dataset.department;
+                    document.querySelector('[data-step="1"] .next-step').disabled = false;
+                    document.getElementById('summary-department').textContent = card.querySelector('.department-name').textContent;
+                });
+            });
+
+            // Doctor selection
+            document.querySelectorAll('.doctor-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    document.querySelectorAll('.doctor-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    formData.doctor = card.dataset.doctor;
+                    document.querySelector('[data-step="2"] .next-step').disabled = false;
+                    document.getElementById('summary-doctor').textContent = card.querySelector('.doctor-name').textContent;
+                });
+            });
+
+            // Priority selection
+            document.querySelectorAll('.priority-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    document.querySelectorAll('.priority-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    formData.priority = card.dataset.priority;
+                    document.querySelector('[data-step="3"] .next-step').disabled = false;
+                    document.getElementById('summary-priority').textContent = card.querySelector('.priority-name').textContent;
+
+                    // Update estimated time based on priority
+                    const times = { emergency: '~2', senior: '~8', normal: '~15' };
+                    document.getElementById('estimated-time').textContent = times[formData.priority];
+                });
+            });
+
+            // Quick reason tags
+            document.querySelectorAll('.reason-tag').forEach(tag => {
+                tag.addEventListener('click', () => {
+                    document.querySelectorAll('.reason-tag').forEach(t => t.classList.remove('selected'));
+                    tag.classList.add('selected');
+                    document.getElementById('patient-reason').value = tag.dataset.reason;
+                });
+            });
+
+            // Next/Prev buttons
+            document.querySelectorAll('.next-step').forEach(btn => {
+                btn.addEventListener('click', () => updateStep(currentStep + 1));
+            });
+
+            document.querySelectorAll('.prev-step').forEach(btn => {
+                btn.addEventListener('click', () => updateStep(currentStep - 1));
+            });
+
+            // Form submission
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const name = document.getElementById('patient-name').value.trim();
+                const phone = document.getElementById('patient-phone').value.trim();
+
+                if (!name || !phone) {
+                    SmartQueue.showNotification('Missing Information', 'Please fill in your name and phone number.', 'warning');
+                    return;
+                }
+
+                // Generate token
+                const token = SmartQueue.utils.generateTokenId('H');
+
+                // Store data
+                SmartQueue.storage.set('currentToken', {
+                    id: token,
+                    type: 'healthcare',
+                    department: formData.department,
+                    doctor: formData.doctor,
+                    priority: formData.priority,
+                    name: name,
+                    phone: phone,
+                    reason: document.getElementById('patient-reason').value,
+                    timestamp: Date.now(),
+                    position: Math.floor(Math.random() * 10) + 1,
+                    estimatedWait: parseInt(document.getElementById('estimated-time').textContent.replace('~', ''))
+                });
+
+                // Navigate to token page
+                window.location.href = 'token.html';
+            });
+        });
+    </script>
+</body>
+
+</html>
