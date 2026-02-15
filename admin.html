@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SmartQueue AI</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages/admin.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+</head>
+
+<body class="admin-page">
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="navbar-logo">
+                <div class="navbar-logo-icon">🚀</div>
+                <span>SmartQueue<span class="text-gradient">AI</span></span>
+            </a>
+            <ul class="navbar-nav">
+                <li><a href="index.html" class="navbar-link">Home</a></li>
+                <li><a href="admin.html" class="navbar-link active">Dashboard</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Login Section -->
+    <div class="login-container" id="login-section">
+        <div class="login-card animate animate-scale-in">
+            <div class="login-icon">🔐</div>
+            <h1 class="login-title">Admin Login</h1>
+            <p class="login-subtitle">Enter credentials to access dashboard</p>
+            <form class="login-form" id="login-form">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" id="admin-username" placeholder="admin" value="admin">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="admin-password" placeholder="••••••••"
+                        value="admin123">
+                </div>
+                <button type="submit" class="btn btn-primary w-full">Login to Dashboard</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div class="admin-container" id="dashboard-section" style="display: none;">
+        <header class="admin-header animate animate-fade-in">
+            <div>
+                <h1 class="admin-title">Queue Dashboard</h1>
+                <p style="color: var(--color-text-muted);">Real-time queue management</p>
+            </div>
+            <div class="admin-actions">
+                <button class="btn btn-secondary" onclick="location.reload()">🔄 Refresh</button>
+                <button class="btn btn-primary" id="logout-btn">Logout</button>
+            </div>
+        </header>
+
+        <!-- Stats Row -->
+        <div class="stats-row animate animate-fade-in-up delay-200">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon healthcare">🏥</div>
+                </div>
+                <div class="stat-card-value" id="stat-healthcare">24</div>
+                <div class="stat-card-label">Healthcare Queue</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon banking">🏦</div>
+                </div>
+                <div class="stat-card-value" id="stat-banking">18</div>
+                <div class="stat-card-label">Banking Queue</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon success">✓</div>
+                </div>
+                <div class="stat-card-value" id="stat-served">156</div>
+                <div class="stat-card-label">Served Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon warning">⏱️</div>
+                </div>
+                <div class="stat-card-value" id="stat-avgwait">8m</div>
+                <div class="stat-card-label">Avg Wait Time</div>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid animate animate-fade-in-up delay-300">
+            <!-- Queue Table -->
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h2 class="dashboard-card-title">Active Queue</h2>
+                    <select class="form-select" style="width: auto; padding: var(--space-2);" id="queue-filter">
+                        <option value="all">All Queues</option>
+                        <option value="healthcare">Healthcare</option>
+                        <option value="banking">Banking</option>
+                    </select>
+                </div>
+                <div class="dashboard-card-body" style="padding: 0;">
+                    <table class="queue-table">
+                        <thead>
+                            <tr>
+                                <th>Token</th>
+                                <th>Name</th>
+                                <th>Service</th>
+                                <th>Priority</th>
+                                <th>Wait</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="queue-table-body">
+                            <tr>
+                                <td class="queue-token">H-OPD-241</td>
+                                <td>Rahul S.</td>
+                                <td>🏥 OPD</td>
+                                <td><span class="queue-priority emergency">Emergency</span></td>
+                                <td>2m</td>
+                                <td class="queue-actions">
+                                    <button class="btn-call" onclick="callNext(this)">Call</button>
+                                    <button class="btn-skip" onclick="skipToken(this)">Skip</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="queue-token">B-CSH-089</td>
+                                <td>Priya M.</td>
+                                <td>🏦 Cash</td>
+                                <td><span class="queue-priority senior">Senior</span></td>
+                                <td>5m</td>
+                                <td class="queue-actions">
+                                    <button class="btn-call" onclick="callNext(this)">Call</button>
+                                    <button class="btn-skip" onclick="skipToken(this)">Skip</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="queue-token">H-LAB-178</td>
+                                <td>Amit K.</td>
+                                <td>🏥 Lab</td>
+                                <td><span class="queue-priority normal">Normal</span></td>
+                                <td>8m</td>
+                                <td class="queue-actions">
+                                    <button class="btn-call" onclick="callNext(this)">Call</button>
+                                    <button class="btn-skip" onclick="skipToken(this)">Skip</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="queue-token">B-ACC-312</td>
+                                <td>Sunita R.</td>
+                                <td>🏦 Accounts</td>
+                                <td><span class="queue-priority normal">Normal</span></td>
+                                <td>12m</td>
+                                <td class="queue-actions">
+                                    <button class="btn-call" onclick="callNext(this)">Call</button>
+                                    <button class="btn-skip" onclick="skipToken(this)">Skip</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="queue-token">H-PHR-445</td>
+                                <td>Vikram T.</td>
+                                <td>🏥 Pharmacy</td>
+                                <td><span class="queue-priority normal">Normal</span></td>
+                                <td>15m</td>
+                                <td class="queue-actions">
+                                    <button class="btn-call" onclick="callNext(this)">Call</button>
+                                    <button class="btn-skip" onclick="skipToken(this)">Skip</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h2 class="dashboard-card-title">Recent Activity</h2>
+                </div>
+                <div class="dashboard-card-body">
+                    <ul class="activity-list" id="activity-list">
+                        <li class="activity-item">
+                            <div class="activity-icon served">✓</div>
+                            <div>
+                                <div class="activity-text"><strong>H-OPD-238</strong> was served</div>
+                                <div class="activity-time">2 minutes ago</div>
+                            </div>
+                        </li>
+                        <li class="activity-item">
+                            <div class="activity-icon joined">+</div>
+                            <div>
+                                <div class="activity-text"><strong>B-LNS-156</strong> joined queue</div>
+                                <div class="activity-time">5 minutes ago</div>
+                            </div>
+                        </li>
+                        <li class="activity-item">
+                            <div class="activity-icon called">📢</div>
+                            <div>
+                                <div class="activity-text"><strong>H-EMR-012</strong> called to Counter 1</div>
+                                <div class="activity-time">8 minutes ago</div>
+                            </div>
+                        </li>
+                        <li class="activity-item">
+                            <div class="activity-icon served">✓</div>
+                            <div>
+                                <div class="activity-text"><strong>B-CSH-087</strong> was served</div>
+                                <div class="activity-time">10 minutes ago</div>
+                            </div>
+                        </li>
+                        <li class="activity-item">
+                            <div class="activity-icon joined">+</div>
+                            <div>
+                                <div class="activity-text"><strong>H-LAB-179</strong> joined queue</div>
+                                <div class="activity-time">12 minutes ago</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Login handling
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('dashboard-section').style.display = 'block';
+            SmartQueue.storage.set('adminLoggedIn', true);
+        });
+
+        document.getElementById('logout-btn')?.addEventListener('click', () => {
+            SmartQueue.storage.remove('adminLoggedIn');
+            location.reload();
+        });
+
+        // Check if already logged in
+        if (SmartQueue.storage.get('adminLoggedIn')) {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('dashboard-section').style.display = 'block';
+        }
+
+        // Queue actions
+        function callNext(btn) {
+            const row = btn.closest('tr');
+            const token = row.querySelector('.queue-token').textContent;
+            addActivity(`<strong>${token}</strong> called to counter`, 'called');
+            row.style.background = 'rgba(var(--color-success-rgb), 0.2)';
+            setTimeout(() => row.remove(), 1000);
+            updateStats();
+        }
+
+        function skipToken(btn) {
+            const row = btn.closest('tr');
+            const token = row.querySelector('.queue-token').textContent;
+            addActivity(`<strong>${token}</strong> skipped`, 'joined');
+            const tbody = document.getElementById('queue-table-body');
+            tbody.appendChild(row);
+        }
+
+        function addActivity(text, type) {
+            const list = document.getElementById('activity-list');
+            const item = document.createElement('li');
+            item.className = 'activity-item';
+            item.innerHTML = `
+        <div class="activity-icon ${type}">${type === 'served' ? '✓' : type === 'called' ? '📢' : '+'}</div>
+        <div>
+          <div class="activity-text">${text}</div>
+          <div class="activity-time">Just now</div>
+        </div>
+      `;
+            list.insertBefore(item, list.firstChild);
+            if (list.children.length > 10) list.lastChild.remove();
+        }
+
+        function updateStats() {
+            const rows = document.querySelectorAll('#queue-table-body tr');
+            let hc = 0, bk = 0;
+            rows.forEach(r => {
+                if (r.querySelector('.queue-token').textContent.startsWith('H')) hc++;
+                else bk++;
+            });
+            document.getElementById('stat-healthcare').textContent = hc;
+            document.getElementById('stat-banking').textContent = bk;
+            const served = parseInt(document.getElementById('stat-served').textContent) + 1;
+            document.getElementById('stat-served').textContent = served;
+        }
+
+        // Filter queue
+        document.getElementById('queue-filter')?.addEventListener('change', (e) => {
+            const filter = e.target.value;
+            document.querySelectorAll('#queue-table-body tr').forEach(row => {
+                const token = row.querySelector('.queue-token').textContent;
+                if (filter === 'all') row.style.display = '';
+                else if (filter === 'healthcare') row.style.display = token.startsWith('H') ? '' : 'none';
+                else row.style.display = token.startsWith('B') ? '' : 'none';
+            });
+        });
+    </script>
+</body>
+
+</html>
