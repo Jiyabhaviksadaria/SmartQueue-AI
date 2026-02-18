@@ -1,0 +1,109 @@
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║          🚀 SMARTQUEUE AI - GETTING STARTED 🚀              ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+📋 STEP-BY-STEP INSTRUCTIONS:
+
+┌──────────────────────────────────────────────────────────────┐
+│  STEP 0: Check Your Setup (Optional but Recommended)        │
+│  ────────────────────────────────────────────────────────    │
+│  Double-click: check-setup.bat                               │
+│  This will verify everything is ready to go                  │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│  STEP 1: Start the Backend Server                           │
+│  ────────────────────────────────────────────────────────    │
+│  Double-click: 1-start-backend.bat                           │
+│                                                              │
+│  A black window will open. You should see:                   │
+│  "Uvicorn running on http://127.0.0.1:8000"                 │
+│                                                              │
+│  ⚠️  KEEP THIS WINDOW OPEN!                                  │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│  STEP 2: Start the Frontend Server                          │
+│  ────────────────────────────────────────────────────────    │
+│  Double-click: 2-start-frontend.bat                          │
+│                                                              │
+│  Another window will open. You should see:                   │
+│  "Serving HTTP on :: port 3000"                             │
+│                                                              │
+│  ⚠️  KEEP THIS WINDOW OPEN TOO!                              │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│  STEP 3: Open in Your Browser                               │
+│  ────────────────────────────────────────────────────────    │
+│  Double-click: 3-open-browser.bat                            │
+│                                                              │
+│  Your browser will automatically open with:                  │
+│  • Test Connection Page                                      │
+│  • Backend API Documentation                                 │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│  STEP 4: Test Everything Works                              │
+│  ────────────────────────────────────────────────────────    │
+│  On the test page, click "Run All Tests"                     │
+│                                                              │
+│  All 5 tests should show ✅ Success                          │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│  STEP 5: Start Using the App! 🎉                            │
+│  ────────────────────────────────────────────────────────    │
+│  Visit these URLs in your browser:                           │
+│                                                              │
+│  🏥 Healthcare Queue:                                        │
+│     http://localhost:3000/healthcare.html                    │
+│                                                              │
+│  🏦 Banking Queue:                                           │
+│     http://localhost:3000/banking.html                       │
+│                                                              │
+│  🏠 Home Page:                                               │
+│     http://localhost:3000/index%20(2).html                   │
+└──────────────────────────────────────────────────────────────┘
+
+
+❓ TROUBLESHOOTING:
+
+Problem: "localhost refused to connect"
+Solution: Make sure BOTH batch files are running (2 windows open)
+
+Problem: "Port already in use"
+Solution: Close other programs or restart your computer
+
+Problem: Tests fail
+Solution: 
+  1. Close both server windows
+  2. Wait 5 seconds
+  3. Run 1-start-backend.bat
+  4. Wait for "Application startup complete"
+  5. Run 2-start-frontend.bat
+  6. Run 3-open-browser.bat
+
+
+📚 MORE HELP:
+
+• README_START_HERE.md - Visual guide with screenshots
+• START_SERVERS.md - Detailed manual instructions
+• INTEGRATION_GUIDE.md - Technical documentation
+
+
+🎯 QUICK LINKS (after servers are running):
+
+Backend API:  http://localhost:8000/docs
+Test Page:    http://localhost:3000/test-connection.html
+Healthcare:   http://localhost:3000/healthcare.html
+Banking:      http://localhost:3000/banking.html
+
+
+═══════════════════════════════════════════════════════════════
+
+Ready to start? Double-click: 1-start-backend.bat
+
+═══════════════════════════════════════════════════════════════

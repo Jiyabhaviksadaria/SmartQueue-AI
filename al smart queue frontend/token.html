@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Token - SmartQueue AI</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages/token.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎫</text></svg>">
+</head>
+<body class="token-page">
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="navbar-logo">
+                <div class="navbar-logo-icon">🚀</div>
+                <span>SmartQueue<span class="text-gradient">AI</span></span>
+            </a>
+            <ul class="navbar-nav">
+                <li><a href="index.html" class="navbar-link">Home</a></li>
+                <li><a href="healthcare.html" class="navbar-link">Healthcare</a></li>
+                <li><a href="banking.html" class="navbar-link">Banking</a></li>
+                <li><a href="tracking.html" class="navbar-link">Track Queue</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="token-container">
+        <div class="token-success-icon">✓</div>
+        <h1 class="token-success-title">Token Generated!</h1>
+        <p class="token-success-subtitle">Your virtual queue token has been created successfully</p>
+
+        <div class="token-card-display" id="token-card">
+            <div class="token-card-inner">
+                <div class="token-type-badge" id="token-badge">
+                    <span id="token-icon">🏥</span>
+                    <span id="token-type-text">Healthcare</span>
+                </div>
+
+                <div class="token-number-display" id="token-number">H-OPD-123</div>
+                <div class="token-label">Your Queue Number</div>
+
+                <div class="token-details">
+                    <div class="token-detail">
+                        <div class="token-detail-label">Position</div>
+                        <div class="token-detail-value" id="token-position">#5 in queue</div>
+                    </div>
+                    <div class="token-detail">
+                        <div class="token-detail-label">Service</div>
+                        <div class="token-detail-value" id="token-service">OPD</div>
+                    </div>
+                    <div class="token-detail">
+                        <div class="token-detail-label">Name</div>
+                        <div class="token-detail-value" id="token-name">-</div>
+                    </div>
+                    <div class="token-detail">
+                        <div class="token-detail-label">Time</div>
+                        <div class="token-detail-value" id="token-time">-</div>
+                    </div>
+                </div>
+
+                <div class="token-wait-preview">
+                    <div class="token-wait-time" id="token-wait">~12</div>
+                    <div class="token-wait-info">
+                        <div class="token-wait-label">Estimated Wait (min)</div>
+                        <div class="token-wait-ai">🤖 AI Predicted</div>
+                    </div>
+                </div>
+
+                <div class="token-qr-placeholder" id="qr-code">
+                    <svg viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="0" y="0" width="7" height="7" fill="#1a1a2e" />
+                        <rect x="1" y="1" width="5" height="5" fill="white" />
+                        <rect x="2" y="2" width="3" height="3" fill="#1a1a2e" />
+                        <rect x="14" y="0" width="7" height="7" fill="#1a1a2e" />
+                        <rect x="15" y="1" width="5" height="5" fill="white" />
+                        <rect x="16" y="2" width="3" height="3" fill="#1a1a2e" />
+                        <rect x="0" y="14" width="7" height="7" fill="#1a1a2e" />
+                        <rect x="1" y="15" width="5" height="5" fill="white" />
+                        <rect x="2" y="16" width="3" height="3" fill="#1a1a2e" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="token-actions">
+            <a href="tracking.html" class="btn btn-primary btn-lg">📍 Track My Queue</a>
+            <button class="btn btn-secondary btn-lg" id="download-token-btn">⬇️ Download Token</button>
+        </div>
+    </main>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/token-display.js"></script>
+</body>
+</html>
