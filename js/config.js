@@ -12,7 +12,8 @@ const API_CONFIG = {
         GET_TOKEN:    '/api/tokens',
         UPDATE_TOKEN: '/api/tokens',
 
-        // FIXED: position is now under /api/tokens/{id}/position
+        // FIX 1: Must end with /{id}/position, so base is /api/tokens
+        // getTokenPosition() builds: /api/tokens/{id}/position  ✅
         QUEUE_POSITION: '/api/tokens',
 
         // Healthcare
