@@ -314,3 +314,79 @@ SmartQueue.navigateTo = function (url) {
 };
 
 console.log('🚀 SmartQueue AI initialized');
+// ============================================
+// 🔥 TOKEN GENERATION + BACKEND CONNECTION
+// ============================================
+
+SmartQueue.generateToken = async function (formData) {
+  try {
+    const response = await fetch("http://127.0.0.1:8000/generate-token/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(formData)
+    });
+
+    if (!response.ok) {
+      throw new Error("Server error while generating token");
+    }
+
+    const data = await response.json();
+
+    console.log("✅ Backend Response:", data);
+
+    SmartQueue.showNotification(
+      "Token Generated",
+      "Your token has been successfully created!",
+      "success"
+    );
+
+  } catch (error) {
+    console.error("❌ Error:", error);
+
+    SmartQueue.showNotification(
+      "Connection Failed",
+      "Unable to connect to backend server.",
+      "error"
+    );
+  }
+};
+
+
+// ============================================
+// 📝 FORM SUBMIT HANDLER
+// ============================================
+
+document.addEventListener("DOMContentLoaded", function () {
+
+  const form = document.getElementById("tokenForm");
+
+  if (!form) return;
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    if (!SmartQueue.validateForm(form)) {
+      SmartQueue.showNotification(
+        "Validation Error",
+        "Please fill all required fields correctly.",
+        "error"
+      );
+      return;
+    }
+
+    const formData = {
+      queue_id: 1,
+      domain: "healthcare",
+      symptoms: form.querySelector('[name="symptoms"]').value,
+      consultation_type: form.querySelector('[name="consultation_type"]').value,
+      service_required: form.querySelector('[name="service_required"]').value
+    };
+
+    console.log("📤 Sending Data:", formData);
+
+    SmartQueue.generateToken(formData);
+  });
+
+});
