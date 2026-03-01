@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 from typing import Optional
+from datetime import datetime
 
 from app.database.db import get_db
-from app.models import Token, TokenStatus, Domain
+from app.models import Token, TokenStatus, Domain, PriorityLevel
 
 router = APIRouter()
 
-
+# ── Auth check ────────────────────────────────────────────────────────────────
 def verify_logged_in(authorization: Optional[str] = Header(None)):
-    """Check that a Bearer token exists — user is logged in"""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
     token = authorization.split(" ")[1]
@@ -18,27 +18,74 @@ def verify_logged_in(authorization: Optional[str] = Header(None)):
     return token
 
 
+# ── Queue recalculation ───────────────────────────────────────────────────────
+def recalculate_queue(db: Session, skip_buffer_minutes: int = 0):
+    """
+    Recalculates position and wait time for every waiting token.
+
+    skip_buffer_minutes: extra grace time added to position 1 when
+    someone was just skipped — gives the next person time to arrive.
+
+    Priority order: EMERGENCY → HIGH → MEDIUM → NORMAL
+    Within same priority: sorted by original position (fairness)
+    """
+    priority_order = {
+        PriorityLevel.EMERGENCY: 0,
+        PriorityLevel.HIGH:      1,
+        PriorityLevel.MEDIUM:    2,
+        PriorityLevel.NORMAL:    3,
+    }
+
+    active_tokens = db.query(Token).filter(
+        Token.status.in_([TokenStatus.ACTIVE, TokenStatus.CREATED])
+    ).all()
+
+    # Sort by priority then current position
+    active_tokens.sort(key=lambda t: (
+        priority_order.get(t.priority, 3),
+        t.position or 999
+    ))
+
+    avg_service_time = 8  # avg minutes per person at counter
+
+    for new_position, token in enumerate(active_tokens, start=1):
+        token.position = new_position
+
+        if new_position == 1:
+            # Person at position 1 is NEXT — give them buffer time if
+            # previous person was skipped so they don't lose their spot
+            token.estimated_wait_time = skip_buffer_minutes
+        else:
+            # Everyone else: (position - 1) * avg service time + buffer
+            token.estimated_wait_time = (
+                (new_position - 1) * avg_service_time + skip_buffer_minutes
+            )
+
+    db.commit()
+
+
+# ── Dashboard ─────────────────────────────────────────────────────────────────
 @router.get("/dashboard")
 def dashboard(db: Session = Depends(get_db), _: str = Depends(verify_logged_in)):
-    total = db.query(Token).filter(Token.status == TokenStatus.ACTIVE).count()
+    active = [TokenStatus.ACTIVE, TokenStatus.CREATED]
 
     healthcare = db.query(Token).filter(
         Token.domain == Domain.HEALTHCARE,
-        Token.status == TokenStatus.ACTIVE
+        Token.status.in_(active)
     ).count()
 
     banking = db.query(Token).filter(
         Token.domain == Domain.BANKING,
-        Token.status == TokenStatus.ACTIVE
+        Token.status.in_(active)
     ).count()
 
-    active_tokens = db.query(Token).filter(Token.status == TokenStatus.ACTIVE).all()
+    active_tokens = db.query(Token).filter(Token.status.in_(active)).all()
     avg_wait = 0
     if active_tokens:
         avg_wait = sum(t.estimated_wait_time or 0 for t in active_tokens) // len(active_tokens)
 
     return {
-        "total_tokens":     total,
+        "total_tokens":     healthcare + banking,
         "healthcare_queue": healthcare,
         "banking_queue":    banking,
         "active_queues":    2,
@@ -49,9 +96,13 @@ def dashboard(db: Session = Depends(get_db), _: str = Depends(verify_logged_in))
     }
 
 
+# ── Queue table ───────────────────────────────────────────────────────────────
 @router.get("/queues")
 def get_queues(db: Session = Depends(get_db), _: str = Depends(verify_logged_in)):
-    tokens = db.query(Token).filter(Token.status == TokenStatus.ACTIVE).all()
+    tokens = db.query(Token).filter(
+        Token.status.in_([TokenStatus.ACTIVE, TokenStatus.CREATED])
+    ).order_by(Token.position).all()
+
     return [
         {
             "token_id":       t.token_number,
@@ -66,25 +117,123 @@ def get_queues(db: Session = Depends(get_db), _: str = Depends(verify_logged_in)
     ]
 
 
+# ── Call token ────────────────────────────────────────────────────────────────
+@router.patch("/tokens/{token_id}/call")
+def call_token(
+    token_id: str,
+    db: Session = Depends(get_db),
+    _: str = Depends(verify_logged_in)
+):
+    """
+    Mark token as IN_SERVICE.
+    Recalculate queue with NO buffer — normal flow, person was present.
+    """
+    token = db.query(Token).filter(Token.token_number == token_id).first()
+    if not token:
+        raise HTTPException(status_code=404, detail="Token not found")
+
+    token.status = TokenStatus.IN_SERVICE
+    token.called_at = datetime.utcnow()
+    db.commit()
+
+    # Normal recalculate — no extra buffer needed
+    recalculate_queue(db, skip_buffer_minutes=0)
+
+    return {
+        "token_id": token_id,
+        "message":  f"{token_id} is now being served",
+        "status":   "in_service"
+    }
+
+
+# ── Skip token ────────────────────────────────────────────────────────────────
+@router.patch("/tokens/{token_id}/skip")
+def skip_token(
+    token_id: str,
+    db: Session = Depends(get_db),
+    _: str = Depends(verify_logged_in)
+):
+    """
+    Person not present — move their token to END of queue.
+
+    KEY FIX: Adds 5 minute buffer to the next person's wait time.
+    This means if person at position 2 thought they had 8 min,
+    they now get 8 + 5 = 13 min buffer so they don't lose their spot.
+    """
+    token = db.query(Token).filter(Token.token_number == token_id).first()
+    if not token:
+        raise HTTPException(status_code=404, detail="Token not found")
+
+    # Count current queue size
+    queue_size = db.query(Token).filter(
+        Token.status.in_([TokenStatus.ACTIVE, TokenStatus.CREATED])
+    ).count()
+
+    # Move skipped token to the very end
+    token.position = queue_size + 1
+    db.commit()
+
+    # ✅ KEY FIX: 5 min buffer added for everyone
+    # Next person (now position 1) gets 5 min grace time to arrive
+    # Everyone else also gets +5 min so they don't rush unnecessarily
+    SKIP_BUFFER = 5
+    recalculate_queue(db, skip_buffer_minutes=SKIP_BUFFER)
+
+    return {
+        "token_id":    token_id,
+        "message":     f"{token_id} skipped — moved to end. +{SKIP_BUFFER} min buffer added for next person.",
+        "new_position": queue_size,
+        "buffer_added": SKIP_BUFFER
+    }
+
+
+# ── Complete token ────────────────────────────────────────────────────────────
+@router.patch("/tokens/{token_id}/complete")
+def complete_token(
+    token_id: str,
+    db: Session = Depends(get_db),
+    _: str = Depends(verify_logged_in)
+):
+    """Service is done — mark as completed and recalculate queue."""
+    token = db.query(Token).filter(Token.token_number == token_id).first()
+    if not token:
+        raise HTTPException(status_code=404, detail="Token not found")
+
+    token.status = TokenStatus.COMPLETED
+    token.service_completed_at = datetime.utcnow()
+    db.commit()
+
+    recalculate_queue(db, skip_buffer_minutes=0)
+    return {"token_id": token_id, "status": "completed"}
+
+
+# ── Call next (legacy) ────────────────────────────────────────────────────────
 @router.post("/queues/{queue_id}/call-next")
-def call_next(queue_id: str, db: Session = Depends(get_db), _: str = Depends(verify_logged_in)):
+def call_next(
+    queue_id: str,
+    db: Session = Depends(get_db),
+    _: str = Depends(verify_logged_in)
+):
     next_token = db.query(Token).filter(
-        Token.status == TokenStatus.ACTIVE
+        Token.status.in_([TokenStatus.ACTIVE, TokenStatus.CREATED])
     ).order_by(Token.position).first()
 
     if not next_token:
         return {"message": "No tokens in queue"}
 
-    next_token.status = TokenStatus.CALLED
+    next_token.status = TokenStatus.IN_SERVICE
+    next_token.called_at = datetime.utcnow()
     db.commit()
+    recalculate_queue(db, skip_buffer_minutes=0)
 
     return {
-        "token_id":      next_token.token_number,
-        "customer_name": next_token.service_name,
-        "position":      next_token.position
+        "token_id": next_token.token_number,
+        "service":  next_token.service_name,
+        "position": next_token.position
     }
 
 
+# ── Live tokens (legacy) ──────────────────────────────────────────────────────
 @router.get("/live-tokens")
 def live_tokens(db: Session = Depends(get_db), _: str = Depends(verify_logged_in)):
     return db.query(Token).all()
