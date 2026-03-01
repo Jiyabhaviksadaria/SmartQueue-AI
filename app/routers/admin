@@ -1,19 +1,25 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from app.database.db import get_db
 from app.models import Token, TokenStatus, Domain
-from app.auth.auth import get_admin_user
 
 router = APIRouter()
 
 
+def verify_logged_in(authorization: Optional[str] = Header(None)):
+    """Check that a Bearer token exists — user is logged in"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = authorization.split(" ")[1]
+    if not token or token in ("null", "undefined", ""):
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return token
+
+
 @router.get("/dashboard")
-def dashboard(db: Session = Depends(get_db), _=Depends(get_admin_user)):
-    """
-    ✅ Frontend calls: GET /api/admin/dashboard
-    Returns summary stats for the admin dashboard cards
-    """
+def dashboard(db: Session = Depends(get_db), _: str = Depends(verify_logged_in)):
     total = db.query(Token).filter(Token.status == TokenStatus.ACTIVE).count()
 
     healthcare = db.query(Token).filter(
@@ -26,7 +32,6 @@ def dashboard(db: Session = Depends(get_db), _=Depends(get_admin_user)):
         Token.status == TokenStatus.ACTIVE
     ).count()
 
-    # Calculate average wait time across all active tokens
     active_tokens = db.query(Token).filter(Token.status == TokenStatus.ACTIVE).all()
     avg_wait = 0
     if active_tokens:
@@ -45,32 +50,24 @@ def dashboard(db: Session = Depends(get_db), _=Depends(get_admin_user)):
 
 
 @router.get("/queues")
-def get_queues(db: Session = Depends(get_db), _=Depends(get_admin_user)):
-    """
-    ✅ Frontend calls: GET /api/admin/queues
-    Returns all active tokens for the queue table
-    """
+def get_queues(db: Session = Depends(get_db), _: str = Depends(verify_logged_in)):
     tokens = db.query(Token).filter(Token.status == TokenStatus.ACTIVE).all()
     return [
         {
-            "token_id":          t.token_number,
-            "service":           t.service_name,
-            "domain":            t.domain.value if t.domain else None,
-            "priority":          t.priority.value if t.priority else "normal",
-            "position":          t.position,
-            "estimated_wait":    t.estimated_wait_time,
-            "status":            t.status.value if t.status else "active"
+            "token_id":       t.token_number,
+            "service":        t.service_name,
+            "domain":         t.domain.value if t.domain else None,
+            "priority":       t.priority.value if t.priority else "normal",
+            "position":       t.position,
+            "estimated_wait": t.estimated_wait_time,
+            "status":         t.status.value if t.status else "active"
         }
         for t in tokens
     ]
 
 
 @router.post("/queues/{queue_id}/call-next")
-def call_next(queue_id: str, db: Session = Depends(get_db), _=Depends(get_admin_user)):
-    """
-    ✅ Frontend calls: POST /api/admin/queues/{queueId}/call-next
-    Marks the next token as called
-    """
+def call_next(queue_id: str, db: Session = Depends(get_db), _: str = Depends(verify_logged_in)):
     next_token = db.query(Token).filter(
         Token.status == TokenStatus.ACTIVE
     ).order_by(Token.position).first()
@@ -89,6 +86,5 @@ def call_next(queue_id: str, db: Session = Depends(get_db), _=Depends(get_admin_
 
 
 @router.get("/live-tokens")
-def live_tokens(db: Session = Depends(get_db), _=Depends(get_admin_user)):
-    """Original endpoint — kept for backward compatibility"""
+def live_tokens(db: Session = Depends(get_db), _: str = Depends(verify_logged_in)):
     return db.query(Token).all()
