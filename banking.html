@@ -165,8 +165,7 @@
                 <div class="patient-form">
                     <div class="form-group">
                         <label class="form-label">Full Name *</label>
-                        <input type="text" class="form-input" id="customer-name" placeholder="Enter your full name"
-                            required>
+                        <input type="text" class="form-input" id="customer-name" placeholder="Enter your full name" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Phone Number *</label>
@@ -212,14 +211,19 @@
                     </div>
                 </div>
 
+                <div id="submit-error" style="display:none; color:#ef476f; text-align:center; margin-bottom:12px;"></div>
+
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary prev-step">← Back</button>
-                    <button type="submit" class="btn btn-banking btn-lg">🎫 Get My Token</button>
+                    <button type="submit" class="btn btn-banking btn-lg" id="submit-btn">🎫 Get My Token</button>
                 </div>
             </section>
         </form>
     </main>
 
+    <!-- ✅ Load config and api FIRST before any other scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/main.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -239,6 +243,7 @@
                 document.querySelector('.queue-form-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
 
+            // Service selection
             document.querySelectorAll('.service-card').forEach(card => {
                 card.addEventListener('click', () => {
                     document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
@@ -249,6 +254,7 @@
                 });
             });
 
+            // Customer type selection
             document.querySelectorAll('.customer-type-card').forEach(card => {
                 card.addEventListener('click', () => {
                     document.querySelectorAll('.customer-type-card').forEach(c => c.classList.remove('selected'));
@@ -264,22 +270,57 @@
             document.querySelectorAll('.next-step').forEach(btn => btn.addEventListener('click', () => updateStep(currentStep + 1)));
             document.querySelectorAll('.prev-step').forEach(btn => btn.addEventListener('click', () => updateStep(currentStep - 1)));
 
-            form.addEventListener('submit', (e) => {
+            // ✅ Form submit — calls real backend API
+            form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const name = document.getElementById('customer-name').value.trim();
-                const phone = document.getElementById('customer-phone').value.trim();
+
+                const name    = document.getElementById('customer-name').value.trim();
+                const phone   = document.getElementById('customer-phone').value.trim();
+                const errBox  = document.getElementById('submit-error');
+                const btn     = document.getElementById('submit-btn');
+
                 if (!name || !phone) {
-                    SmartQueue.showNotification('Missing Information', 'Please fill in required fields.', 'warning');
+                    errBox.textContent = 'Please fill in your name and phone number.';
+                    errBox.style.display = 'block';
                     return;
                 }
-                const token = SmartQueue.utils.generateTokenId('B');
-                SmartQueue.storage.set('currentToken', {
-                    id: token, type: 'banking', service: formData.service, customerType: formData.type,
-                    name, phone, counter: 'Counter 3', timestamp: Date.now(),
-                    position: Math.floor(Math.random() * 8) + 1,
-                    estimatedWait: parseInt(document.getElementById('estimated-time').textContent.replace('~', ''))
-                });
-                window.location.href = 'token.html';
+
+                btn.disabled    = true;
+                btn.textContent = '⏳ Creating Token...';
+                errBox.style.display = 'none';
+
+                try {
+                    // ✅ Call real backend
+                    const response = await api.createBankingToken({
+                        name,
+                        phone,
+                        service:     formData.service,
+                        accountType: formData.type,
+                        isPremium:   formData.type === 'premium'
+                    });
+
+                    // ✅ Save real token data to localStorage for token.html to read
+                    localStorage.setItem('currentToken', JSON.stringify({
+                        id:            response.token_id,
+                        type:          'banking',
+                        name,
+                        phone,
+                        service:       formData.service,
+                        customerType:  formData.type,
+                        position:      response.position,
+                        estimatedWait: response.estimated_wait_time,
+                        timestamp:     Date.now()
+                    }));
+
+                    window.location.href = 'token.html';
+
+                } catch (error) {
+                    console.error('Error creating token:', error);
+                    errBox.textContent   = 'Failed to create token: ' + (error.message || 'Please try again.');
+                    errBox.style.display = 'block';
+                    btn.disabled         = false;
+                    btn.textContent      = '🎫 Get My Token';
+                }
             });
         });
     </script>
