@@ -15,6 +15,7 @@ class StatusUpdate(BaseModel):
     status: str
 
 
+# 🔥 ✅ CREATE TOKEN (FIXED POSITION LOGIC)
 @router.post("/", response_model=TokenResponse)
 def create_token(
     data: TokenCreate,
@@ -22,19 +23,31 @@ def create_token(
     user=Depends(get_current_active_user)
 ):
     token_number = generate_token(data.domain.value, "S")
+
+    # 🔥 Get last position in queue
+    last_token = db.query(Token).filter(
+        Token.queue_id == data.queue_id,
+        Token.status != TokenStatus.CANCELLED
+    ).order_by(Token.position.desc()).first()
+
+    next_position = 1 if not last_token else last_token.position + 1
+
     token = Token(
         token_number=token_number,
         user_id=user.id,
         queue_id=data.queue_id,
         domain=data.domain,
-        status=TokenStatus.ACTIVE
+        status=TokenStatus.ACTIVE,
+        position=next_position   # 🔥 IMPORTANT
     )
+
     db.add(token)
     db.commit()
     db.refresh(token)
     return token
 
 
+# ✅ GET TOKEN DETAILS
 @router.get("/{token_id}")
 def get_token(token_id: str, db: Session = Depends(get_db)):
     token = db.query(Token).filter(Token.token_number == token_id).first()
@@ -50,15 +63,19 @@ def get_token(token_id: str, db: Session = Depends(get_db)):
     }
 
 
+# ✅ GET POSITION
 @router.get("/{token_id}/position")
 def get_token_position(token_id: str, db: Session = Depends(get_db)):
     token = db.query(Token).filter(Token.token_number == token_id).first()
     if not token:
         raise HTTPException(status_code=404, detail="Token not found")
+
     ahead = db.query(Token).filter(
+        Token.queue_id == token.queue_id,
         Token.status == TokenStatus.ACTIVE,
         Token.position < token.position
     ).count()
+
     return {
         "token_id":       token_id,
         "position":       token.position,
@@ -68,15 +85,13 @@ def get_token_position(token_id: str, db: Session = Depends(get_db)):
     }
 
 
+# 🔥 ✅ UPDATE STATUS
 @router.patch("/{token_id}/status")
 def update_token_status(token_id: str, payload: StatusUpdate, db: Session = Depends(get_db)):
     token = db.query(Token).filter(Token.token_number == token_id).first()
     if not token:
         raise HTTPException(status_code=404, detail="Token not found")
 
-    # ✅ Fixed: matches your actual TokenStatus enum in models.py
-    # Your enum has: CREATED, ACTIVE, IN_SERVICE, COMPLETED, EXPIRED, CANCELLED
-    # It does NOT have CALLED or SERVING
     status_map = {
         "waiting":   TokenStatus.ACTIVE,
         "called":    TokenStatus.IN_SERVICE,
@@ -92,11 +107,34 @@ def update_token_status(token_id: str, payload: StatusUpdate, db: Session = Depe
     return {"token_id": token_id, "status": payload.status}
 
 
+# 🔥🔥🔥 ✅ CANCEL TOKEN (MAIN FIX - UPDATE QUEUE)
 @router.delete("/{token_id}")
 def cancel_token(token_id: str, db: Session = Depends(get_db)):
     token = db.query(Token).filter(Token.token_number == token_id).first()
+
     if not token:
         raise HTTPException(status_code=404, detail="Token not found")
+
+    queue_id = token.queue_id
+    removed_position = token.position
+
+    # Step 1: Cancel token
     token.status = TokenStatus.CANCELLED
+
+    # 🔥 Step 2: Shift others forward
+    tokens_to_update = db.query(Token).filter(
+        Token.queue_id == queue_id,
+        Token.position > removed_position,
+        Token.status != TokenStatus.CANCELLED
+    ).all()
+
+    for t in tokens_to_update:
+        t.position -= 1
+
     db.commit()
-    return {"token_id": token_id, "status": "cancelled"}
+
+    return {
+        "token_id": token_id,
+        "status": "cancelled",
+        "updated_positions": len(tokens_to_update)
+    }
