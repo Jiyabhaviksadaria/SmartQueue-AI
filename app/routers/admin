@@ -5,6 +5,10 @@ from datetime import datetime
 
 from app.database.db import get_db
 from app.models import Token, TokenStatus, Domain, PriorityLevel
+from app.services.notification_service import (
+    sms_your_turn,
+    sms_emergency_rejected as sms_emerg_reject
+)
 from app.services.queue_engine import (
     recalculate_queue,
     handle_cancellation,
@@ -96,6 +100,15 @@ def call_token(
 
     recalculate_queue(db, extra_buffer=0)
 
+    # ── SMS: notify patient it is their turn ──────────────────────────────
+    if token.patient_phone:
+        sms_your_turn(
+            phone      = token.patient_phone,
+            token_id   = token_id,
+            department = token.service_name or "counter",
+            counter    = token.queue.counter_number if token.queue else None
+        )
+
     return {
         "token_id": token_id,
         "message":  f"{token_id} is now being served",
@@ -177,6 +190,15 @@ def reject_emergency_claim(
         raise HTTPException(status_code=400, detail="Token is not marked as emergency")
 
     result = downgrade_unverified_emergency(db, token)
+
+    # ── SMS: notify patient their claim was rejected ───────────────────────
+    if token.patient_phone:
+        sms_emerg_reject(
+            phone        = token.patient_phone,
+            token_id     = token_id,
+            new_position = result.get("new_position", 0)
+        )
+
     return result
 
 
