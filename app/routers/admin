@@ -5,6 +5,12 @@ from datetime import datetime
 
 from app.database.db import get_db
 from app.models import Token, TokenStatus, Domain, PriorityLevel
+from app.services.queue_engine import (
+    recalculate_queue,
+    handle_cancellation,
+    downgrade_unverified_emergency,
+    SKIP_GRACE_BUFFER,
+)
 
 router = APIRouter()
 
@@ -17,51 +23,6 @@ def verify_logged_in(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="Invalid token")
     return token
 
-
-# ── Queue recalculation ───────────────────────────────────────────────────────
-def recalculate_queue(db: Session, skip_buffer_minutes: int = 0):
-    """
-    Recalculates position and wait time for every waiting token.
-
-    skip_buffer_minutes: extra grace time added to position 1 when
-    someone was just skipped — gives the next person time to arrive.
-
-    Priority order: EMERGENCY → HIGH → MEDIUM → NORMAL
-    Within same priority: sorted by original position (fairness)
-    """
-    priority_order = {
-        PriorityLevel.EMERGENCY: 0,
-        PriorityLevel.HIGH:      1,
-        PriorityLevel.MEDIUM:    2,
-        PriorityLevel.NORMAL:    3,
-    }
-
-    active_tokens = db.query(Token).filter(
-        Token.status.in_([TokenStatus.ACTIVE, TokenStatus.CREATED])
-    ).all()
-
-    # Sort by priority then current position
-    active_tokens.sort(key=lambda t: (
-        priority_order.get(t.priority, 3),
-        t.position or 999
-    ))
-
-    avg_service_time = 8  # avg minutes per person at counter
-
-    for new_position, token in enumerate(active_tokens, start=1):
-        token.position = new_position
-
-        if new_position == 1:
-            # Person at position 1 is NEXT — give them buffer time if
-            # previous person was skipped so they don't lose their spot
-            token.estimated_wait_time = skip_buffer_minutes
-        else:
-            # Everyone else: (position - 1) * avg service time + buffer
-            token.estimated_wait_time = (
-                (new_position - 1) * avg_service_time + skip_buffer_minutes
-            )
-
-    db.commit()
 
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -124,10 +85,7 @@ def call_token(
     db: Session = Depends(get_db),
     _: str = Depends(verify_logged_in)
 ):
-    """
-    Mark token as IN_SERVICE.
-    Recalculate queue with NO buffer — normal flow, person was present.
-    """
+    """Mark token as IN_SERVICE. Normal flow — person was present, no buffer."""
     token = db.query(Token).filter(Token.token_number == token_id).first()
     if not token:
         raise HTTPException(status_code=404, detail="Token not found")
@@ -136,8 +94,7 @@ def call_token(
     token.called_at = datetime.utcnow()
     db.commit()
 
-    # Normal recalculate — no extra buffer needed
-    recalculate_queue(db, skip_buffer_minutes=0)
+    recalculate_queue(db, extra_buffer=0)
 
     return {
         "token_id": token_id,
@@ -155,35 +112,28 @@ def skip_token(
 ):
     """
     Person not present — move their token to END of queue.
-
-    KEY FIX: Adds 5 minute buffer to the next person's wait time.
-    This means if person at position 2 thought they had 8 min,
-    they now get 8 + 5 = 13 min buffer so they don't lose their spot.
+    Uses SKIP_GRACE_BUFFER from queue_engine (default 5 min) so the
+    next person doesn't suddenly find themselves overdue.
+    Buffer is also MIN_ARRIVAL_BUFFER-aware via recalculate_queue.
     """
     token = db.query(Token).filter(Token.token_number == token_id).first()
     if not token:
         raise HTTPException(status_code=404, detail="Token not found")
 
-    # Count current queue size
     queue_size = db.query(Token).filter(
         Token.status.in_([TokenStatus.ACTIVE, TokenStatus.CREATED])
     ).count()
 
-    # Move skipped token to the very end
     token.position = queue_size + 1
     db.commit()
 
-    # ✅ KEY FIX: 5 min buffer added for everyone
-    # Next person (now position 1) gets 5 min grace time to arrive
-    # Everyone else also gets +5 min so they don't rush unnecessarily
-    SKIP_BUFFER = 5
-    recalculate_queue(db, skip_buffer_minutes=SKIP_BUFFER)
+    recalculate_queue(db, extra_buffer=SKIP_GRACE_BUFFER)
 
     return {
-        "token_id":    token_id,
-        "message":     f"{token_id} skipped — moved to end. +{SKIP_BUFFER} min buffer added for next person.",
+        "token_id":     token_id,
+        "message":      f"{token_id} skipped — moved to end. +{SKIP_GRACE_BUFFER} min buffer added.",
         "new_position": queue_size,
-        "buffer_added": SKIP_BUFFER
+        "buffer_added": SKIP_GRACE_BUFFER
     }
 
 
@@ -203,8 +153,31 @@ def complete_token(
     token.service_completed_at = datetime.utcnow()
     db.commit()
 
-    recalculate_queue(db, skip_buffer_minutes=0)
+    recalculate_queue(db, extra_buffer=0)
     return {"token_id": token_id, "status": "completed"}
+
+
+# ── Emergency fraud downgrade ─────────────────────────────────────────────────
+@router.patch("/tokens/{token_id}/reject-emergency")
+def reject_emergency_claim(
+    token_id: str,
+    db: Session = Depends(get_db),
+    _: str = Depends(verify_logged_in)
+):
+    """
+    Staff rejects an emergency claim — moves token to BACK of normal queue
+    as a penalty. This discourages abuse: faking emergency is now actively
+    worse than joining normally.
+    """
+    token = db.query(Token).filter(Token.token_number == token_id).first()
+    if not token:
+        raise HTTPException(status_code=404, detail="Token not found")
+
+    if token.priority != PriorityLevel.EMERGENCY:
+        raise HTTPException(status_code=400, detail="Token is not marked as emergency")
+
+    result = downgrade_unverified_emergency(db, token)
+    return result
 
 
 # ── Call next (legacy) ────────────────────────────────────────────────────────
@@ -224,7 +197,7 @@ def call_next(
     next_token.status = TokenStatus.IN_SERVICE
     next_token.called_at = datetime.utcnow()
     db.commit()
-    recalculate_queue(db, skip_buffer_minutes=0)
+    recalculate_queue(db, extra_buffer=0)
 
     return {
         "token_id": next_token.token_number,
