@@ -121,9 +121,37 @@ document.addEventListener('DOMContentLoaded', async () => {
             formData.priority = card.dataset.priority;
             document.querySelector('[data-step="3"] .next-step').disabled = false;
             document.getElementById('summary-priority').textContent = card.querySelector('.priority-name').textContent;
-            
+
             const times = { emergency: '~2', senior: '~8', normal: '~15' };
             document.getElementById('estimated-time').textContent = times[formData.priority];
+
+            // ── Emergency fraud warning ──────────────────────────────────────
+            // Remove old warning if any
+            const oldWarning = document.getElementById('emergency-fraud-warning');
+            if (oldWarning) oldWarning.remove();
+
+            if (formData.priority === 'emergency') {
+                const warning = document.createElement('div');
+                warning.id = 'emergency-fraud-warning';
+                warning.style.cssText = `
+                    background: rgba(239,71,111,0.12);
+                    border: 1px solid rgba(239,71,111,0.5);
+                    border-radius: 10px;
+                    padding: 14px 16px;
+                    margin-top: 16px;
+                    font-size: 0.88rem;
+                    color: #ef476f;
+                    line-height: 1.5;
+                `;
+                warning.innerHTML = `
+                    <strong>⚠️ Emergency Declaration Notice</strong><br>
+                    Emergency status gives you immediate priority but will be <strong>verified by staff on arrival</strong>.
+                    If your claim is rejected, your token will be moved to the <strong>back of the normal queue</strong> as a penalty.
+                    Please only select Emergency if you have a genuine medical emergency.
+                `;
+                // Insert warning after priority grid
+                card.closest('.priority-grid').insertAdjacentElement('afterend', warning);
+            }
         });
     });
 
