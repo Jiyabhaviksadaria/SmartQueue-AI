@@ -7,6 +7,7 @@ from app.schemas import TokenCreate, TokenResponse
 from app.models import Token, TokenStatus
 from app.utils.token_generator import generate_token
 from app.auth.auth import get_current_active_user
+from app.services.queue_engine import handle_cancellation
 
 router = APIRouter()
 
@@ -107,7 +108,7 @@ def update_token_status(token_id: str, payload: StatusUpdate, db: Session = Depe
     return {"token_id": token_id, "status": payload.status}
 
 
-# 🔥🔥🔥 ✅ CANCEL TOKEN (MAIN FIX - UPDATE QUEUE)
+# 🔥🔥🔥 ✅ CANCEL TOKEN — buffer-aware redistribution
 @router.delete("/{token_id}")
 def cancel_token(token_id: str, db: Session = Depends(get_db)):
     token = db.query(Token).filter(Token.token_number == token_id).first()
@@ -115,26 +116,9 @@ def cancel_token(token_id: str, db: Session = Depends(get_db)):
     if not token:
         raise HTTPException(status_code=404, detail="Token not found")
 
-    queue_id = token.queue_id
-    removed_position = token.position
+    if token.status == TokenStatus.CANCELLED:
+        raise HTTPException(status_code=400, detail="Token already cancelled")
 
-    # Step 1: Cancel token
-    token.status = TokenStatus.CANCELLED
-
-    # 🔥 Step 2: Shift others forward
-    tokens_to_update = db.query(Token).filter(
-        Token.queue_id == queue_id,
-        Token.position > removed_position,
-        Token.status != TokenStatus.CANCELLED
-    ).all()
-
-    for t in tokens_to_update:
-        t.position -= 1
-
-    db.commit()
-
-    return {
-        "token_id": token_id,
-        "status": "cancelled",
-        "updated_positions": len(tokens_to_update)
-    }
+    # ✅ Buffer-aware cancellation — no more blind position -= 1
+    result = handle_cancellation(db, token)
+    return result
