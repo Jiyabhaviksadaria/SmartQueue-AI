@@ -141,6 +141,32 @@ class SmartQueueAPI {
         });
     }
 
+    // ── Admin token actions (new) ─────────────────────
+    // Call a specific token to counter — triggers buffer-aware recalculation
+    async adminCallToken(tokenId) {
+        return await this.request(`/api/admin/tokens/${tokenId}/call`, { method: 'PATCH' });
+    }
+
+    // Skip token — moves to end, adds SKIP_GRACE_BUFFER for next person
+    async adminSkipToken(tokenId) {
+        return await this.request(`/api/admin/tokens/${tokenId}/skip`, { method: 'PATCH' });
+    }
+
+    // Complete service for a token — marks done, recalculates queue
+    async adminCompleteToken(tokenId) {
+        return await this.request(`/api/admin/tokens/${tokenId}/complete`, { method: 'PATCH' });
+    }
+
+    // Emergency fraud: reject claim, penalty-move to back of normal queue
+    async rejectEmergencyClaim(tokenId) {
+        return await this.request(`/api/admin/tokens/${tokenId}/reject-emergency`, { method: 'PATCH' });
+    }
+
+    // Buffer-aware cancel — protects users with low ETA from losing their slot
+    async cancelToken(tokenId) {
+        return await this.request(`/api/tokens/${tokenId}`, { method: 'DELETE' });
+    }
+
     // ── WebSocket ─────────────────────────────────
     connectWebSocket(clientId, onMessage) {
         if (this.ws) {
