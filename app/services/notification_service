@@ -1,5 +1,197 @@
-def send_sms(phone: str, message: str):
-    print(f"[SMS] {phone}: {message}")
+"""
+Notification Service — SmartQueue AI
+SMS via Twilio
 
-def send_email(email: str, subject: str, body: str):
-    print(f"[EMAIL] {email}: {subject}")
+SAVE AS: app/services/notification_service.py
+
+Setup:
+    pip install twilio
+
+Steps to enable:
+    1. Go to console.twilio.com
+    2. Copy Account SID, Auth Token, Phone Number
+    3. Paste them below
+    4. Set SMS_ENABLED = True
+    5. Done!
+"""
+
+from twilio.rest import Client
+from typing import Optional
+from datetime import datetime
+# ══════════════════════════════════════════════════════
+# YOUR TWILIO CREDENTIALS — fill these in
+# ══════════════════════════════════════════════════════
+
+SMS_ENABLED        = False                               # ← change to True when ready
+TWILIO_ACCOUNT_SID = "ACe78da0883e7842d77be673e9b5d2348b"  # from console.twilio.com
+TWILIO_AUTH_TOKEN  = "21682ed569f81579355b782524a95d1e"    # from console.twilio.com
+TWILIO_FROM_NUMBER = "+18146322052"                        # your Twilio phone number
+
+APP_NAME = "SmartQueue"
+
+
+# ══════════════════════════════════════════════════════
+# CORE SENDER — internal
+# ══════════════════════════════════════════════════════
+
+def _clean_phone(phone: str) -> str:
+    """Adds +91 for 10-digit Indian numbers if no country code present."""
+    phone = phone.strip().replace(" ", "").replace("-", "")
+    if phone.startswith("+"):
+        return phone
+    if len(phone) == 10:
+        return f"+91{phone}"
+    return phone
+
+
+def send_sms(phone: str, message: str) -> bool:
+    """
+    Send an SMS. Always logs to console.
+    Only sends for real when SMS_ENABLED = True.
+    Returns True on success, False on failure.
+    """
+    phone = _clean_phone(phone)
+
+    print(f"\n[SMS] ──────────────────────────────")
+    print(f"[SMS] To:  {phone}")
+    print(f"[SMS] Msg: {message}")
+    print(f"[SMS] ──────────────────────────────\n")
+
+    if not SMS_ENABLED:
+        print("[SMS] Dev mode — not sent. Set SMS_ENABLED=True to send real SMS.")
+        return True
+
+    try:
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        msg = client.messages.create(
+            body=message,
+            from_=TWILIO_FROM_NUMBER,
+            to=phone
+        )
+        print(f"[SMS] Sent! Twilio SID: {msg.sid}")
+        return True
+    except Exception as e:
+        print(f"[SMS] FAILED to send to {phone}: {e}")
+        return False
+
+
+# ══════════════════════════════════════════════════════
+# SMS TEMPLATES — call these from your routers
+# ══════════════════════════════════════════════════════
+
+def sms_otp(phone: str, otp: str) -> bool:
+    """OTP for slot booking. Called from: POST /api/slots/otp/send"""
+    msg = (
+        f"{APP_NAME}: Your OTP is {otp}. "
+        f"Valid for 10 minutes. Do not share with anyone."
+    )
+    return send_sms(phone, msg)
+
+
+def sms_booking_confirmed(
+    phone: str, token_id: str, department: str,
+    appointment_date: str, slot_time: str, slot_position: int
+) -> bool:
+    """Pre-booking confirmed. Called from: POST /api/slots/book"""
+    msg = (
+        f"{APP_NAME}: Appointment confirmed!\n"
+        f"Token: {token_id} | {department.upper()}\n"
+        f"Date: {appointment_date} at {slot_time}\n"
+        f"Slot #{slot_position}. Arrive 5 min early.\n"
+        f"Token expires 15 min after slot if unused."
+    )
+    return send_sms(phone, msg)
+
+
+def sms_walkin_created(
+    phone: str, token_id: str, department: str,
+    position: int, wait_mins: int
+) -> bool:
+    """Walk-in token issued. Called from: POST /api/healthcare/token"""
+    msg = (
+        f"{APP_NAME}: Token issued!\n"
+        f"Token: {token_id} | {department.upper()}\n"
+        f"Position: #{position} | Est. wait: ~{wait_mins} min\n"
+        f"You will be SMS'd when 3 people are ahead."
+    )
+    return send_sms(phone, msg)
+
+
+def sms_token_activated(
+    phone: str, token_id: str, department: str,
+    position: int, wait_mins: int
+) -> bool:
+    """Pre-booked token activated today. Called from: APScheduler in main.py"""
+    msg = (
+        f"{APP_NAME}: Your appointment is TODAY!\n"
+        f"Token: {token_id} | {department.upper()}\n"
+        f"Position: #{position} | Est. wait: ~{wait_mins} min\n"
+        f"You will be SMS'd when 3 people are ahead."
+    )
+    return send_sms(phone, msg)
+
+
+def sms_almost_your_turn(
+    phone: str, token_id: str, department: str,
+    ahead: int, wait_mins: int
+) -> bool:
+    """3 or fewer people ahead. Called from: queue_engine.py recalculate_queue()"""
+    msg = (
+        f"{APP_NAME}: Almost your turn!\n"
+        f"Token: {token_id} | {department.upper()}\n"
+        f"Only {ahead} person{'s' if ahead != 1 else ''} ahead (~{wait_mins} min).\n"
+        f"Please head to the hospital/counter NOW."
+    )
+    return send_sms(phone, msg)
+
+
+def sms_your_turn(
+    phone: str, token_id: str, department: str,
+    counter: Optional[str] = None
+) -> bool:
+    """Admin clicked Call. Called from: PATCH /api/admin/tokens/{id}/call"""
+    counter_text = f"Go to Counter {counter}" if counter else "Go to the counter"
+    msg = (
+        f"{APP_NAME}: IT'S YOUR TURN!\n"
+        f"Token: {token_id} | {department.upper()}\n"
+        f"{counter_text} immediately.\n"
+        f"You have 5 minutes before your token expires."
+    )
+    return send_sms(phone, msg)
+
+
+def sms_token_expired(
+    phone: str, token_id: str, department: str
+) -> bool:
+    """Token auto-expired no-show. Called from: APScheduler in main.py"""
+    msg = (
+        f"{APP_NAME}: Token expired.\n"
+        f"Token {token_id} ({department.upper()}) expired — no check-in detected.\n"
+        f"Please re-book at SmartQueue."
+    )
+    return send_sms(phone, msg)
+
+
+def sms_token_cancelled(
+    phone: str, token_id: str, department: str
+) -> bool:
+    """Patient cancelled. Called from: DELETE /api/tokens/{id}"""
+    msg = (
+        f"{APP_NAME}: Booking cancelled.\n"
+        f"Token {token_id} ({department.upper()}) has been cancelled.\n"
+        f"Re-book anytime at SmartQueue."
+    )
+    return send_sms(phone, msg)
+
+
+def sms_emergency_rejected(
+    phone: str, token_id: str, new_position: int
+) -> bool:
+    """Staff rejected emergency claim. Called from: PATCH /api/admin/tokens/{id}/reject-emergency"""
+    msg = (
+        f"{APP_NAME}: Emergency claim rejected.\n"
+        f"Token {token_id}: not verified by staff.\n"
+        f"Moved to position #{new_position} in normal queue."
+    )
+    return send_sms(phone, msg)
+
