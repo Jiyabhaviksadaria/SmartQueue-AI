@@ -6,6 +6,7 @@ from app.database.db import get_db
 from app.schemas import QueueCreate, QueueResponse
 from app.models import Queue, Token, TokenStatus
 from app.auth.auth import get_admin_user
+from app.services.queue_engine import handle_cancellation
 
 router = APIRouter()
 
@@ -38,7 +39,6 @@ def join_queue(queue_id: int, user_id: int, db: Session = Depends(get_db)):
     if not queue:
         raise HTTPException(status_code=404, detail="Queue not found")
 
-    # Get last position
     last_token = (
         db.query(Token)
         .filter(Token.queue_id == queue_id, Token.status != TokenStatus.CANCELLED)
@@ -68,7 +68,7 @@ def join_queue(queue_id: int, user_id: int, db: Session = Depends(get_db)):
     }
 
 
-# 🔥🔥🔥 ✅ LEAVE / SKIP QUEUE (MAIN FIX)
+# 🔥🔥🔥 ✅ LEAVE QUEUE — buffer-aware, no more blind position -= 1
 @router.post("/leave/{token_id}")
 def leave_queue(token_id: int, db: Session = Depends(get_db)):
     token = db.query(Token).filter(Token.id == token_id).first()
@@ -76,33 +76,12 @@ def leave_queue(token_id: int, db: Session = Depends(get_db)):
     if not token:
         raise HTTPException(status_code=404, detail="Token not found")
 
-    queue_id = token.queue_id
-    removed_position = token.position
+    if token.status == TokenStatus.CANCELLED:
+        raise HTTPException(status_code=400, detail="Token already cancelled")
 
-    # Mark token as cancelled
-    token.status = TokenStatus.CANCELLED
-
-    # 🔥 SHIFT OTHER USERS FORWARD
-    tokens_to_update = (
-        db.query(Token)
-        .filter(
-            Token.queue_id == queue_id,
-            Token.position > removed_position,
-            Token.status != TokenStatus.CANCELLED
-        )
-        .order_by(asc(Token.position))
-        .all()
-    )
-
-    for t in tokens_to_update:
-        t.position -= 1  # move forward
-
-    db.commit()
-
-    return {
-        "message": "User removed from queue",
-        "updated": len(tokens_to_update)
-    }
+    # ✅ Buffer-aware redistribution — protects people with low ETAs
+    result = handle_cancellation(db, token)
+    return result
 
 
 # 🔥 ✅ GET QUEUE WITH ORDER
