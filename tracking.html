@@ -114,61 +114,129 @@
         </div>
     </main>
 
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/main.js"></script>
     <script src="js/ai-predictor.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const tokenData = SmartQueue.storage.get('currentToken');
+
+            // ✅ Fix 1: Read from localStorage directly (matches what forms save)
+            const raw = localStorage.getItem('currentToken');
+            const tokenData = raw ? JSON.parse(raw) : null;
 
             if (!tokenData) {
                 document.querySelector('.tracking-card-body').innerHTML = `
-          <div style="text-align: center; padding: var(--space-8);">
-            <div style="font-size: 4rem; margin-bottom: var(--space-4);">🎫</div>
-            <h3 style="margin-bottom: var(--space-2);">No Active Token</h3>
-            <p style="color: var(--color-text-secondary); margin-bottom: var(--space-6);">Get a token first to track your queue position</p>
-            <a href="healthcare.html" class="btn btn-healthcare">Healthcare Queue</a>
-            <a href="banking.html" class="btn btn-banking" style="margin-left: var(--space-2);">Banking Queue</a>
-          </div>
-        `;
+                    <div style="text-align: center; padding: var(--space-8);">
+                        <div style="font-size: 4rem; margin-bottom: var(--space-4);">🎫</div>
+                        <h3 style="margin-bottom: var(--space-2);">No Active Token</h3>
+                        <p style="color: var(--color-text-secondary); margin-bottom: var(--space-6);">Get a token first to track your queue position</p>
+                        <a href="healthcare.html" class="btn btn-healthcare">Healthcare Queue</a>
+                        <a href="banking.html" class="btn btn-banking" style="margin-left: var(--space-2);">Banking Queue</a>
+                    </div>`;
                 return;
             }
 
+            // Set static info that doesn't change
             const isHealthcare = tokenData.type === 'healthcare';
-            document.getElementById('tracking-icon').textContent = isHealthcare ? '🏥' : '🏦';
+            document.getElementById('tracking-icon').textContent     = isHealthcare ? '🏥' : '🏦';
             document.getElementById('tracking-token-id').textContent = tokenData.id;
-            document.getElementById('position-number').textContent = tokenData.position;
-            document.getElementById('progress-text').textContent = `${tokenData.position - 1} ahead of you`;
-            document.getElementById('wait-minutes').textContent = `~${tokenData.estimatedWait}`;
-            document.getElementById('info-service').textContent = isHealthcare ?
+            document.getElementById('info-service').textContent      = isHealthcare ?
                 (tokenData.department || '-').toUpperCase() : (tokenData.service || '-');
-            document.getElementById('info-assigned').textContent = isHealthcare ?
-                (tokenData.doctor === 'any' ? 'Any Available' : tokenData.doctor || '-') : (tokenData.counter || 'Counter 3');
+            document.getElementById('info-assigned').textContent     = isHealthcare ?
+                (tokenData.doctor === 'any' ? 'Any Available' : tokenData.doctor || '-') :
+                (tokenData.counter || 'Counter 3');
 
-            const eta = new Date(Date.now() + tokenData.estimatedWait * 60000);
-            document.getElementById('wait-eta').textContent = eta.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            // ✅ Fix 2: Update UI with live data from backend
+            // MIN_ARRIVAL_BUFFER must match backend constant (queue_engine.py)
+            const MIN_ARRIVAL_BUFFER = 10;
 
-            const progress = Math.min(100, Math.max(10, 100 - (tokenData.position * 10)));
-            document.getElementById('progress-fill').style.width = `${progress}%`;
+            function updateUI(position, waitMinutes) {
+                // Never show negative wait time
+                const safeWait = Math.max(0, waitMinutes || 0);
+                const safePos  = Math.max(1, position || 1);
 
-            // Simulate queue movement
-            let currentPosition = tokenData.position;
-            setInterval(() => {
-                if (currentPosition > 1 && Math.random() > 0.5) {
-                    currentPosition--;
-                    document.getElementById('position-number').textContent = currentPosition;
-                    document.getElementById('progress-text').textContent = `${currentPosition - 1} ahead of you`;
-                    const newProgress = Math.min(100, Math.max(10, 100 - (currentPosition * 10)));
-                    document.getElementById('progress-fill').style.width = `${newProgress}%`;
-                    document.getElementById('wait-minutes').textContent = `~${Math.max(1, currentPosition * 3)}`;
+                document.getElementById('position-number').textContent  = safePos;
+                document.getElementById('progress-text').textContent    = `${Math.max(0, safePos - 1)} ahead of you`;
 
-                    if (currentPosition === 1) {
-                        document.getElementById('status-badge').textContent = "You're Next!";
-                        document.getElementById('status-badge').classList.add('active');
-                        document.getElementById('position-display').classList.add('your-turn');
-                        document.getElementById('your-turn-alert').style.display = 'block';
+                // ── Buffer-aware ETA display ──────────────────────────────────
+                // Backend floors ETA at MIN_ARRIVAL_BUFFER when a cancellation
+                // would drop someone too low. Show a note so user understands
+                // their time is protected, not stale.
+                const waitEl = document.getElementById('wait-minutes');
+                if (safePos > 1 && safeWait <= MIN_ARRIVAL_BUFFER) {
+                    waitEl.textContent  = `~${safeWait}`;
+                    waitEl.title        = 'Your wait is protected — you have at least ' + MIN_ARRIVAL_BUFFER + ' min to arrive safely';
+
+                    // Show small buffer note if not already there
+                    if (!document.getElementById('buffer-note')) {
+                        const note = document.createElement('div');
+                        note.id = 'buffer-note';
+                        note.style.cssText = 'font-size:0.75rem;color:var(--color-text-muted);margin-top:4px;text-align:center;';
+                        note.textContent = '🛡️ Min arrival buffer active';
+                        waitEl.parentElement.appendChild(note);
                     }
+                } else {
+                    waitEl.textContent = `~${safeWait}`;
+                    const note = document.getElementById('buffer-note');
+                    if (note) note.remove();
                 }
-            }, 10000);
+
+                // Progress bar — closer to front = more filled
+                const totalEstimate = tokenData.position || 5;
+                const progress = Math.min(95, Math.max(5, ((totalEstimate - safePos + 1) / totalEstimate) * 100));
+                document.getElementById('progress-fill').style.width = `${progress}%`;
+
+                // ETA clock
+                const eta = new Date(Date.now() + safeWait * 60000);
+                document.getElementById('wait-eta').textContent = eta.toLocaleTimeString('en-US', {
+                    hour: '2-digit', minute: '2-digit'
+                });
+
+                // Your turn alert
+                if (safePos === 1) {
+                    document.getElementById('status-badge').textContent = "You're Next!";
+                    document.getElementById('status-badge').classList.add('active');
+                    document.getElementById('position-display').classList.add('your-turn');
+                    const alert = document.getElementById('your-turn-alert');
+                    if (alert) alert.style.display = 'block';
+                }
+            }
+
+            // Show initial data from localStorage first
+            updateUI(tokenData.position, tokenData.estimatedWait);
+
+            // ✅ Fix 3: Poll REAL backend every 15 seconds for live position
+            async function pollPosition() {
+                try {
+                    const update = await api.getTokenPosition(tokenData.id);
+
+                    if (update && update.position !== undefined) {
+                        // Update localStorage with fresh data
+                        tokenData.position      = update.position;
+                        tokenData.estimatedWait = update.estimated_wait;
+                        localStorage.setItem('currentToken', JSON.stringify(tokenData));
+
+                        updateUI(update.position, update.estimated_wait);
+
+                        // If token is no longer active (called/completed)
+                        if (update.status === 'in_service') {
+                            document.getElementById('status-badge').textContent = '🔔 Your Turn!';
+                            document.getElementById('status-badge').classList.add('active');
+                        } else if (update.status === 'completed' || update.status === 'cancelled') {
+                            document.getElementById('status-badge').textContent = 'Done';
+                            clearInterval(pollingInterval);
+                        }
+                    }
+                } catch (err) {
+                    console.log('Position poll failed:', err.message);
+                    // Keep showing last known data — don't break the UI
+                }
+            }
+
+            // Poll immediately then every 15 seconds
+            pollPosition();
+            const pollingInterval = setInterval(pollPosition, 15000);
         });
     </script>
 </body>
