@@ -85,6 +85,13 @@
                 <div class="stat-card-value" id="stat-served">--</div>
                 <div class="stat-card-label">Served Today</div>
             </div>
+            <div class="stat-card" id="grievance-stat-card" style="cursor:pointer;" onclick="showGrievancePanel()">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon warning">⚠️</div>
+                </div>
+                <div class="stat-card-value" id="stat-grievances" style="color:#ef476f;">--</div>
+                <div class="stat-card-label">Pending Appeals</div>
+            </div>
             <div class="stat-card">
                 <div class="stat-card-header">
                     <div class="stat-card-icon warning">⏱️</div>
@@ -144,6 +151,32 @@
                         </li>
                     </ul>
                 </div>
+            </div>
+        </div>
+
+        <!-- Grievance Appeals Panel -->
+        <div id="grievance-panel" style="display:none;" class="dashboard-card animate animate-fade-in-up" style="margin-top:24px;">
+            <div class="dashboard-card-header">
+                <h2 class="dashboard-card-title">⚠️ Pending Emergency Appeals</h2>
+                <button class="btn btn-secondary" onclick="document.getElementById('grievance-panel').style.display='none'" style="padding:6px 12px;font-size:0.85rem;">Close</button>
+            </div>
+            <div class="dashboard-card-body" style="padding:0;">
+                <table class="queue-table">
+                    <thead>
+                        <tr>
+                            <th>Appeal #</th>
+                            <th>Token</th>
+                            <th>Dept</th>
+                            <th>Severity</th>
+                            <th>Patient Says</th>
+                            <th>Staff Rejected Because</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="grievance-table-body">
+                        <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-text-muted);">Loading appeals...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -217,6 +250,12 @@
                 document.getElementById('stat-banking').textContent    = data.banking_queue    ?? 0;
                 document.getElementById('stat-served').textContent     = data.served_today     ?? 0;
                 document.getElementById('stat-avgwait').textContent    = data.avg_wait_time    ?? '0m';
+                // Show pending appeals count
+                const grievanceCount = data.pending_grievances ?? 0;
+                document.getElementById('stat-grievances').textContent = grievanceCount;
+                // Flash red if there are pending appeals
+                const card = document.getElementById('grievance-stat-card');
+                if (card) card.style.outline = grievanceCount > 0 ? '2px solid rgba(239,71,111,0.5)' : 'none';
             } catch (err) {
                 console.error('Stats load failed:', err.message);
             }
@@ -319,19 +358,115 @@
 
         // ── Reject emergency claim — penalty: back of normal queue ──
         async function rejectEmergency(tokenId, btn) {
-            if (!confirm(`Reject emergency claim for ${tokenId}?\n\nThis will move the token to the BACK of the normal queue as a penalty.`)) return;
+            const reason = prompt(
+                `Reject emergency claim for ${tokenId}?\n\nEnter reason (required for audit log):\ne.g. "Patient walking normally", "Claimed headache only", "Refused physical check"`
+            );
+            if (reason === null) return;  // cancelled
+            if (!reason.trim()) { alert('Please enter a reason.'); return; }
+
             btn.disabled = true;
             try {
-                const result = await api.rejectEmergencyClaim(tokenId);
+                const result = await fetch(`http://localhost:8000/api/admin/tokens/${tokenId}/reject-emergency`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify({ reason: reason.trim() })
+                });
+                const data = await result.json();
+                const strikesNote = data.total_strikes ? ` (${data.total_strikes}/3 strikes)` : '';
+                const blockedNote = data.emergency_blocked ? ' — BLOCKED from emergency' : '';
                 addActivity(
-                    `<strong>${tokenId}</strong> emergency REJECTED — moved to position ${result.new_position} (normal queue)`,
+                    `<strong>${tokenId}</strong> REJECTED — "${reason}" → pos #${data.new_position}${strikesNote}${blockedNote}`,
                     'served'
                 );
-                // Reload table to show updated priorities and positions
                 setTimeout(loadQueueTable, 500);
             } catch (err) {
-                addActivity(`Failed to reject emergency for ${tokenId}: ${err.message}`, 'served');
+                addActivity(`Failed: ${err.message}`, 'served');
                 btn.disabled = false;
+            }
+        }
+
+        // ── Grievance panel ───────────────────────────────────────────────────
+        async function showGrievancePanel() {
+            document.getElementById('grievance-panel').style.display = 'block';
+            await loadGrievances();
+        }
+
+        async function loadGrievances() {
+            const tbody = document.getElementById('grievance-table-body');
+            try {
+                const res  = await fetch('http://localhost:8000/api/grievance/list?status=pending', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                const data = await res.json();
+                if (!data.grievances || data.grievances.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-text-muted);">No pending appeals</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = data.grievances.map(g => {
+                    const flagColors = {
+                        'likely_genuine': '#06d6a0',
+                        'needs_check':    '#BA7517',
+                        'suspicious':     '#ef476f'
+                    };
+                    const fc = flagColors[g.severity_flag] || '#888';
+                    return `
+                        <tr id="grievance-row-${g.grievance_id}">
+                            <td>#${g.grievance_id}</td>
+                            <td class="queue-token">${g.token_number || '-'}</td>
+                            <td>${(g.department || '-').toUpperCase()}</td>
+                            <td style="color:${fc};">${g.severity_flag || '-'} (${g.severity_score || '?'}/10)</td>
+                            <td style="font-size:0.82rem;max-width:200px;">${g.description.substring(0, 80)}${g.description.length > 80 ? '...' : ''}</td>
+                            <td style="font-size:0.82rem;color:var(--color-text-muted);">${g.rejection_reason || '-'}</td>
+                            <td>
+                                <button onclick="resolveGrievance(${g.grievance_id}, '${g.token_number}', 'approve')"
+                                    style="background:rgba(6,214,160,0.15);color:#06d6a0;border:1px solid rgba(6,214,160,0.4);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:0.8rem;margin-right:4px;">
+                                    ✓ Approve
+                                </button>
+                                <button onclick="resolveGrievance(${g.grievance_id}, '${g.token_number}', 'reject')"
+                                    style="background:rgba(239,71,111,0.15);color:#ef476f;border:1px solid rgba(239,71,111,0.4);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:0.8rem;">
+                                    ✗ Deny
+                                </button>
+                            </td>
+                        </tr>`;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#ef476f;">Failed to load: ${err.message}</td></tr>`;
+            }
+        }
+
+        async function resolveGrievance(grievanceId, tokenId, action) {
+            const note = prompt(
+                `${action === 'approve' ? 'APPROVE' : 'DENY'} appeal #${grievanceId} for ${tokenId}?\n\n` +
+                `Enter resolution note (required):\n` +
+                (action === 'approve'
+                    ? 'e.g. "Patient showed visible distress, genuine emergency"'
+                    : 'e.g. "No physical signs of emergency on arrival"')
+            );
+            if (note === null) return;
+            if (!note.trim()) { alert('Please enter a resolution note.'); return; }
+
+            try {
+                const res = await fetch(`http://localhost:8000/api/grievance/${grievanceId}/${action}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify({ resolution_note: note.trim(), resolved_by: 'admin' })
+                });
+                const data = await res.json();
+                addActivity(
+                    `Appeal #${grievanceId} (${tokenId}) ${action === 'approve' ? 'APPROVED — emergency restored' : 'DENIED — stays normal queue'}`,
+                    action === 'approve' ? 'served' : 'joined'
+                );
+                document.getElementById(`grievance-row-${grievanceId}`)?.remove();
+                loadStats();
+                loadQueueTable();
+            } catch (err) {
+                alert('Failed: ' + err.message);
             }
         }
 
