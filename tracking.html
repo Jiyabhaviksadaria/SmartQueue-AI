@@ -177,7 +177,7 @@
     <script src="js/main.js"></script>
     <script src="js/ai-predictor.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
 
             // ✅ Fix 1: Read from localStorage directly (matches what forms save)
             const raw = localStorage.getItem('currentToken');
