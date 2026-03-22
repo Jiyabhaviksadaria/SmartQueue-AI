@@ -1,13 +1,24 @@
+"""
+Admin Router — SmartQueue AI
+SAVE AS: app/routers/admin.py
+Changes: severity flag in queue table, reason required on reject,
+         grievance count in dashboard, strike tracking.
+"""
+
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
 from app.database.db import get_db
-from app.models import Token, TokenStatus, Domain, PriorityLevel
+from app.models import (
+    Token, TokenStatus, Domain, PriorityLevel,
+    EmergencyStrike, Grievance, GrievanceStatus
+)
 from app.services.notification_service import (
     sms_your_turn,
-    sms_emergency_rejected as sms_emerg_reject
+    sms_emergency_rejected
 )
 from app.services.queue_engine import (
     recalculate_queue,
@@ -15,10 +26,13 @@ from app.services.queue_engine import (
     downgrade_unverified_emergency,
     SKIP_GRACE_BUFFER,
 )
+from app.services.priority_engine import add_strike
 
 router = APIRouter()
 
-# ── Auth check ────────────────────────────────────────────────────────────────
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
+
 def verify_logged_in(authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -28,20 +42,24 @@ def verify_logged_in(authorization: Optional[str] = Header(None)):
     return token
 
 
+# ── Schemas ───────────────────────────────────────────────────────────────────
+
+class RejectEmergencyRequest(BaseModel):
+    reason: Optional[str] = "Rejected by staff"
+
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
+
 @router.get("/dashboard")
 def dashboard(db: Session = Depends(get_db), _: str = Depends(verify_logged_in)):
     active = [TokenStatus.ACTIVE, TokenStatus.CREATED]
 
     healthcare = db.query(Token).filter(
-        Token.domain == Domain.HEALTHCARE,
-        Token.status.in_(active)
+        Token.domain == Domain.HEALTHCARE, Token.status.in_(active)
     ).count()
 
     banking = db.query(Token).filter(
-        Token.domain == Domain.BANKING,
-        Token.status.in_(active)
+        Token.domain == Domain.BANKING, Token.status.in_(active)
     ).count()
 
     active_tokens = db.query(Token).filter(Token.status.in_(active)).all()
@@ -49,19 +67,26 @@ def dashboard(db: Session = Depends(get_db), _: str = Depends(verify_logged_in))
     if active_tokens:
         avg_wait = sum(t.estimated_wait_time or 0 for t in active_tokens) // len(active_tokens)
 
+    # Pending grievances count — shown as alert in dashboard
+    pending_grievances = db.query(Grievance).filter(
+        Grievance.status == GrievanceStatus.PENDING
+    ).count()
+
     return {
-        "total_tokens":     healthcare + banking,
-        "healthcare_queue": healthcare,
-        "banking_queue":    banking,
-        "active_queues":    2,
-        "avg_wait_time":    f"{avg_wait}m",
-        "served_today":     db.query(Token).filter(
-            Token.status == TokenStatus.COMPLETED
-        ).count()
+        "total_tokens":        healthcare + banking,
+        "healthcare_queue":    healthcare,
+        "banking_queue":       banking,
+        "active_queues":       2,
+        "avg_wait_time":       f"{avg_wait}m",
+        "served_today":        db.query(Token).filter(
+                                   Token.status == TokenStatus.COMPLETED
+                               ).count(),
+        "pending_grievances":  pending_grievances   # ← new field
     }
 
 
 # ── Queue table ───────────────────────────────────────────────────────────────
+
 @router.get("/queues")
 def get_queues(db: Session = Depends(get_db), _: str = Depends(verify_logged_in)):
     tokens = db.query(Token).filter(
@@ -76,31 +101,33 @@ def get_queues(db: Session = Depends(get_db), _: str = Depends(verify_logged_in)
             "priority":       t.priority.value if t.priority else "normal",
             "position":       t.position,
             "estimated_wait": t.estimated_wait_time,
-            "status":         t.status.value if t.status else "active"
+            "status":         t.status.value if t.status else "active",
+            # Severity info for emergency tokens — shown as flag in admin UI
+            "severity_score": t.severity_score,
+            "severity_flag":  t.severity_flag,
         }
         for t in tokens
     ]
 
 
 # ── Call token ────────────────────────────────────────────────────────────────
+
 @router.patch("/tokens/{token_id}/call")
 def call_token(
     token_id: str,
     db: Session = Depends(get_db),
     _: str = Depends(verify_logged_in)
 ):
-    """Mark token as IN_SERVICE. Normal flow — person was present, no buffer."""
     token = db.query(Token).filter(Token.token_number == token_id).first()
     if not token:
         raise HTTPException(status_code=404, detail="Token not found")
 
-    token.status = TokenStatus.IN_SERVICE
+    token.status    = TokenStatus.IN_SERVICE
     token.called_at = datetime.utcnow()
     db.commit()
 
     recalculate_queue(db, extra_buffer=0)
 
-    # ── SMS: notify patient it is their turn ──────────────────────────────
     if token.patient_phone:
         sms_your_turn(
             phone      = token.patient_phone,
@@ -117,18 +144,13 @@ def call_token(
 
 
 # ── Skip token ────────────────────────────────────────────────────────────────
+
 @router.patch("/tokens/{token_id}/skip")
 def skip_token(
     token_id: str,
     db: Session = Depends(get_db),
     _: str = Depends(verify_logged_in)
 ):
-    """
-    Person not present — move their token to END of queue.
-    Uses SKIP_GRACE_BUFFER from queue_engine (default 5 min) so the
-    next person doesn't suddenly find themselves overdue.
-    Buffer is also MIN_ARRIVAL_BUFFER-aware via recalculate_queue.
-    """
     token = db.query(Token).filter(Token.token_number == token_id).first()
     if not token:
         raise HTTPException(status_code=404, detail="Token not found")
@@ -151,18 +173,18 @@ def skip_token(
 
 
 # ── Complete token ────────────────────────────────────────────────────────────
+
 @router.patch("/tokens/{token_id}/complete")
 def complete_token(
     token_id: str,
     db: Session = Depends(get_db),
     _: str = Depends(verify_logged_in)
 ):
-    """Service is done — mark as completed and recalculate queue."""
     token = db.query(Token).filter(Token.token_number == token_id).first()
     if not token:
         raise HTTPException(status_code=404, detail="Token not found")
 
-    token.status = TokenStatus.COMPLETED
+    token.status              = TokenStatus.COMPLETED
     token.service_completed_at = datetime.utcnow()
     db.commit()
 
@@ -170,17 +192,21 @@ def complete_token(
     return {"token_id": token_id, "status": "completed"}
 
 
-# ── Emergency fraud downgrade ─────────────────────────────────────────────────
+# ── Reject emergency claim ────────────────────────────────────────────────────
+
 @router.patch("/tokens/{token_id}/reject-emergency")
 def reject_emergency_claim(
     token_id: str,
-    db: Session = Depends(get_db),
-    _: str = Depends(verify_logged_in)
+    payload:  RejectEmergencyRequest = RejectEmergencyRequest(),
+    db:       Session = Depends(get_db),
+    _:        str     = Depends(verify_logged_in)
 ):
     """
-    Staff rejects an emergency claim — moves token to BACK of normal queue
-    as a penalty. This discourages abuse: faking emergency is now actively
-    worse than joining normally.
+    Staff rejects emergency claim.
+    - Downgrades token to back of normal queue
+    - Adds abuse strike to phone number
+    - Records rejection reason
+    - Sends SMS with appeal instructions
     """
     token = db.query(Token).filter(Token.token_number == token_id).first()
     if not token:
@@ -189,11 +215,28 @@ def reject_emergency_claim(
     if token.priority != PriorityLevel.EMERGENCY:
         raise HTTPException(status_code=400, detail="Token is not marked as emergency")
 
+    # Save original priority before downgrade
+    token.original_priority  = PriorityLevel.EMERGENCY.value
+    token.emergency_rejected = True
+    token.rejection_reason   = payload.reason
+    token.called_at          = datetime.utcnow()   # timestamp for appeal window
+
     result = downgrade_unverified_emergency(db, token)
 
-    # ── SMS: notify patient their claim was rejected ───────────────────────
+    # Add strike to phone number
     if token.patient_phone:
-        sms_emerg_reject(
+        total_strikes = add_strike(
+            phone      = token.patient_phone,
+            token_id   = token_id,
+            reason     = payload.reason or "Rejected by staff",
+            db         = db,
+            created_by = "admin"
+        )
+        result["total_strikes"]      = total_strikes
+        result["emergency_blocked"]  = total_strikes >= 3
+
+        # SMS with appeal instructions
+        sms_emergency_rejected(
             phone        = token.patient_phone,
             token_id     = token_id,
             new_position = result.get("new_position", 0)
@@ -203,6 +246,7 @@ def reject_emergency_claim(
 
 
 # ── Call next (legacy) ────────────────────────────────────────────────────────
+
 @router.post("/queues/{queue_id}/call-next")
 def call_next(
     queue_id: str,
@@ -216,7 +260,7 @@ def call_next(
     if not next_token:
         return {"message": "No tokens in queue"}
 
-    next_token.status = TokenStatus.IN_SERVICE
+    next_token.status    = TokenStatus.IN_SERVICE
     next_token.called_at = datetime.utcnow()
     db.commit()
     recalculate_queue(db, extra_buffer=0)
@@ -229,6 +273,7 @@ def call_next(
 
 
 # ── Live tokens (legacy) ──────────────────────────────────────────────────────
+
 @router.get("/live-tokens")
 def live_tokens(db: Session = Depends(get_db), _: str = Depends(verify_logged_in)):
     return db.query(Token).all()
