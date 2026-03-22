@@ -112,6 +112,64 @@
                 🔄 Refresh Status
             </button>
         </div>
+
+        <!-- Appeal section: shown only when emergency was rejected -->
+        <div id="appeal-section" style="display:none;max-width:480px;margin:24px auto 0;">
+            <div style="background:rgba(239,71,111,0.08);border:1px solid rgba(239,71,111,0.3);
+                border-radius:14px;padding:20px 24px;">
+                <div style="font-size:1rem;font-weight:500;color:#ef476f;margin-bottom:8px;">
+                    ⚠️ Emergency claim was rejected
+                </div>
+                <div style="font-size:0.85rem;color:var(--color-text-secondary);margin-bottom:16px;">
+                    If this was a genuine emergency, you can file an appeal within 30 minutes.
+                    Admin will review and restore your priority if verified.
+                </div>
+
+                <!-- Appeal form -->
+                <div id="appeal-form-section">
+                    <div style="margin-bottom:12px;">
+                        <label style="font-size:0.82rem;color:var(--color-text-secondary);display:block;margin-bottom:4px;">
+                            Describe your emergency (min 20 characters) *
+                        </label>
+                        <textarea id="appeal-description" rows="3"
+                            placeholder="e.g. I have severe chest pain since 30 minutes and difficulty breathing..."
+                            style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--color-border-secondary);
+                                background:var(--color-background-primary);color:var(--color-text-primary);
+                                font-size:0.88rem;resize:vertical;box-sizing:border-box;"></textarea>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="font-size:0.82rem;color:var(--color-text-secondary);display:block;margin-bottom:4px;">
+                            Reason code
+                        </label>
+                        <select id="appeal-reason-code"
+                            style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--color-border-secondary);
+                                background:var(--color-background-primary);color:var(--color-text-primary);">
+                            <option value="chest_pain">Chest pain / cardiac</option>
+                            <option value="accident">Accident / injury</option>
+                            <option value="breathing">Breathing difficulty</option>
+                            <option value="severe_pain">Severe pain</option>
+                            <option value="other">Other emergency</option>
+                        </select>
+                    </div>
+                    <div id="appeal-status-msg" style="font-size:0.82rem;min-height:18px;margin-bottom:10px;"></div>
+                    <button id="file-appeal-btn" onclick="fileAppeal()"
+                        style="width:100%;padding:12px;background:rgba(239,71,111,0.15);
+                            color:#ef476f;border:1px solid rgba(239,71,111,0.5);border-radius:10px;
+                            cursor:pointer;font-size:0.9rem;font-weight:500;">
+                        📝 File Appeal
+                    </button>
+                </div>
+
+                <!-- Appeal filed confirmation -->
+                <div id="appeal-filed-section" style="display:none;text-align:center;padding:12px 0;">
+                    <div style="font-size:1.5rem;margin-bottom:8px;">⏳</div>
+                    <div style="font-weight:500;margin-bottom:4px;">Appeal filed!</div>
+                    <div id="appeal-filed-status" style="font-size:0.85rem;color:var(--color-text-secondary);">
+                        Waiting for admin review...
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script src="js/config.js"></script>
@@ -237,7 +295,88 @@
             // Poll immediately then every 15 seconds
             pollPosition();
             const pollingInterval = setInterval(pollPosition, 15000);
+
+            // Check if emergency was rejected — show appeal section
+            if (tokenData.priority === 'emergency' || tokenData.type === 'healthcare') {
+                try {
+                    const statusRes = await api.getToken(tokenData.id);
+                    if (statusRes && statusRes.emergency_rejected) {
+                        document.getElementById('appeal-section').style.display = 'block';
+                        // Poll appeal status every 20 seconds
+                        checkAppealStatus(tokenData.id);
+                        setInterval(() => checkAppealStatus(tokenData.id), 20000);
+                    }
+                } catch {}
+            }
         });
+
+        async function fileAppeal() {
+            const tokenData    = JSON.parse(localStorage.getItem('currentToken') || '{}');
+            const description  = document.getElementById('appeal-description').value.trim();
+            const reasonCode   = document.getElementById('appeal-reason-code').value;
+            const statusMsg    = document.getElementById('appeal-status-msg');
+            const btn          = document.getElementById('file-appeal-btn');
+
+            if (!description || description.length < 20) {
+                statusMsg.textContent = '⚠️ Please describe your emergency in at least 20 characters.';
+                statusMsg.style.color = '#ef476f';
+                return;
+            }
+
+            btn.disabled    = true;
+            btn.textContent = '⏳ Filing appeal...';
+            statusMsg.textContent = '';
+
+            try {
+                const res = await fetch('http://localhost:8000/api/grievance/submit', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token_number: tokenData.id,
+                        phone:        tokenData.phone || '',
+                        description:  description,
+                        reason_code:  reasonCode
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Failed');
+
+                document.getElementById('appeal-form-section').style.display   = 'none';
+                document.getElementById('appeal-filed-section').style.display  = 'block';
+                document.getElementById('appeal-filed-status').textContent     = data.message;
+
+            } catch (err) {
+                statusMsg.textContent = '❌ ' + err.message;
+                statusMsg.style.color = '#ef476f';
+                btn.disabled    = false;
+                btn.textContent = '📝 File Appeal';
+            }
+        }
+
+        async function checkAppealStatus(tokenId) {
+            try {
+                const res  = await fetch(`http://localhost:8000/api/grievance/status/${tokenId}`);
+                const data = await res.json();
+                if (!data.has_grievance) return;
+
+                const filedSection = document.getElementById('appeal-filed-section');
+                const statusEl     = document.getElementById('appeal-filed-status');
+
+                if (data.appeal_status === 'approved') {
+                    filedSection.style.display = 'block';
+                    document.getElementById('appeal-form-section').style.display = 'none';
+                    statusEl.innerHTML = '<span style="color:#06d6a0;font-weight:500;">✓ Appeal APPROVED! Emergency priority restored — please go to counter.</span>';
+                } else if (data.appeal_status === 'rejected') {
+                    filedSection.style.display = 'block';
+                    document.getElementById('appeal-form-section').style.display = 'none';
+                    statusEl.innerHTML = '<span style="color:#ef476f;">✗ Appeal denied. You remain in the normal queue.</span>';
+                } else if (data.appeal_status === 'pending') {
+                    filedSection.style.display = 'block';
+                    document.getElementById('appeal-form-section').style.display = 'none';
+                    statusEl.textContent = '⏳ ' + (data.message || 'Waiting for admin review...');
+                }
+            } catch {}
+        }
     </script>
 </body>
 
