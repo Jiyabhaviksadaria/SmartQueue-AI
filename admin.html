@@ -33,6 +33,7 @@
             <div class="login-icon">🔐</div>
             <h1 class="login-title">Admin Login</h1>
             <p class="login-subtitle">Enter credentials to access dashboard</p>
+            <div id="login-error" style="display:none; color:#ef476f; margin-bottom:12px; font-size:0.9rem;"></div>
             <form class="login-form" id="login-form">
                 <div class="form-group">
                     <label class="form-label">Username</label>
@@ -40,10 +41,9 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="admin-password" placeholder="••••••••"
-                        value="admin123">
+                    <input type="password" class="form-input" id="admin-password" placeholder="••••••••" value="admin123">
                 </div>
-                <button type="submit" class="btn btn-primary w-full">Login to Dashboard</button>
+                <button type="submit" class="btn btn-primary w-full" id="login-btn">Login to Dashboard</button>
             </form>
         </div>
     </div>
@@ -56,7 +56,8 @@
                 <p style="color: var(--color-text-muted);">Real-time queue management</p>
             </div>
             <div class="admin-actions">
-                <button class="btn btn-secondary" onclick="location.reload()">🔄 Refresh</button>
+                <span id="last-updated" style="color: var(--color-text-muted); font-size:0.85rem; margin-right:12px;"></span>
+                <button class="btn btn-secondary" onclick="loadDashboard()">🔄 Refresh</button>
                 <button class="btn btn-primary" id="logout-btn">Logout</button>
             </div>
         </header>
@@ -67,28 +68,35 @@
                 <div class="stat-card-header">
                     <div class="stat-card-icon healthcare">🏥</div>
                 </div>
-                <div class="stat-card-value" id="stat-healthcare">24</div>
+                <div class="stat-card-value" id="stat-healthcare">--</div>
                 <div class="stat-card-label">Healthcare Queue</div>
             </div>
             <div class="stat-card">
                 <div class="stat-card-header">
                     <div class="stat-card-icon banking">🏦</div>
                 </div>
-                <div class="stat-card-value" id="stat-banking">18</div>
+                <div class="stat-card-value" id="stat-banking">--</div>
                 <div class="stat-card-label">Banking Queue</div>
             </div>
             <div class="stat-card">
                 <div class="stat-card-header">
                     <div class="stat-card-icon success">✓</div>
                 </div>
-                <div class="stat-card-value" id="stat-served">156</div>
+                <div class="stat-card-value" id="stat-served">--</div>
                 <div class="stat-card-label">Served Today</div>
+            </div>
+            <div class="stat-card" id="grievance-stat-card" style="cursor:pointer;" onclick="showGrievancePanel()">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon warning">⚠️</div>
+                </div>
+                <div class="stat-card-value" id="stat-grievances" style="color:#ef476f;">--</div>
+                <div class="stat-card-label">Pending Appeals</div>
             </div>
             <div class="stat-card">
                 <div class="stat-card-header">
                     <div class="stat-card-icon warning">⏱️</div>
                 </div>
-                <div class="stat-card-value" id="stat-avgwait">8m</div>
+                <div class="stat-card-value" id="stat-avgwait">--</div>
                 <div class="stat-card-label">Avg Wait Time</div>
             </div>
         </div>
@@ -110,7 +118,6 @@
                         <thead>
                             <tr>
                                 <th>Token</th>
-                                <th>Name</th>
                                 <th>Service</th>
                                 <th>Priority</th>
                                 <th>Wait</th>
@@ -119,58 +126,8 @@
                         </thead>
                         <tbody id="queue-table-body">
                             <tr>
-                                <td class="queue-token">H-OPD-241</td>
-                                <td>Rahul S.</td>
-                                <td>🏥 OPD</td>
-                                <td><span class="queue-priority emergency">Emergency</span></td>
-                                <td>2m</td>
-                                <td class="queue-actions">
-                                    <button class="btn-call" onclick="callNext(this)">Call</button>
-                                    <button class="btn-skip" onclick="skipToken(this)">Skip</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="queue-token">B-CSH-089</td>
-                                <td>Priya M.</td>
-                                <td>🏦 Cash</td>
-                                <td><span class="queue-priority senior">Senior</span></td>
-                                <td>5m</td>
-                                <td class="queue-actions">
-                                    <button class="btn-call" onclick="callNext(this)">Call</button>
-                                    <button class="btn-skip" onclick="skipToken(this)">Skip</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="queue-token">H-LAB-178</td>
-                                <td>Amit K.</td>
-                                <td>🏥 Lab</td>
-                                <td><span class="queue-priority normal">Normal</span></td>
-                                <td>8m</td>
-                                <td class="queue-actions">
-                                    <button class="btn-call" onclick="callNext(this)">Call</button>
-                                    <button class="btn-skip" onclick="skipToken(this)">Skip</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="queue-token">B-ACC-312</td>
-                                <td>Sunita R.</td>
-                                <td>🏦 Accounts</td>
-                                <td><span class="queue-priority normal">Normal</span></td>
-                                <td>12m</td>
-                                <td class="queue-actions">
-                                    <button class="btn-call" onclick="callNext(this)">Call</button>
-                                    <button class="btn-skip" onclick="skipToken(this)">Skip</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="queue-token">H-PHR-445</td>
-                                <td>Vikram T.</td>
-                                <td>🏥 Pharmacy</td>
-                                <td><span class="queue-priority normal">Normal</span></td>
-                                <td>15m</td>
-                                <td class="queue-actions">
-                                    <button class="btn-call" onclick="callNext(this)">Call</button>
-                                    <button class="btn-skip" onclick="skipToken(this)">Skip</button>
+                                <td colspan="5" style="text-align:center; padding: 24px; color: var(--color-text-muted);">
+                                    Loading queue data...
                                 </td>
                             </tr>
                         </tbody>
@@ -186,123 +143,363 @@
                 <div class="dashboard-card-body">
                     <ul class="activity-list" id="activity-list">
                         <li class="activity-item">
-                            <div class="activity-icon served">✓</div>
-                            <div>
-                                <div class="activity-text"><strong>H-OPD-238</strong> was served</div>
-                                <div class="activity-time">2 minutes ago</div>
-                            </div>
-                        </li>
-                        <li class="activity-item">
                             <div class="activity-icon joined">+</div>
                             <div>
-                                <div class="activity-text"><strong>B-LNS-156</strong> joined queue</div>
-                                <div class="activity-time">5 minutes ago</div>
-                            </div>
-                        </li>
-                        <li class="activity-item">
-                            <div class="activity-icon called">📢</div>
-                            <div>
-                                <div class="activity-text"><strong>H-EMR-012</strong> called to Counter 1</div>
-                                <div class="activity-time">8 minutes ago</div>
-                            </div>
-                        </li>
-                        <li class="activity-item">
-                            <div class="activity-icon served">✓</div>
-                            <div>
-                                <div class="activity-text"><strong>B-CSH-087</strong> was served</div>
-                                <div class="activity-time">10 minutes ago</div>
-                            </div>
-                        </li>
-                        <li class="activity-item">
-                            <div class="activity-icon joined">+</div>
-                            <div>
-                                <div class="activity-text"><strong>H-LAB-179</strong> joined queue</div>
-                                <div class="activity-time">12 minutes ago</div>
+                                <div class="activity-text">Waiting for activity...</div>
+                                <div class="activity-time">Just now</div>
                             </div>
                         </li>
                     </ul>
                 </div>
             </div>
         </div>
+
+        <!-- Grievance Appeals Panel -->
+        <div id="grievance-panel" style="display:none;" class="dashboard-card animate animate-fade-in-up" style="margin-top:24px;">
+            <div class="dashboard-card-header">
+                <h2 class="dashboard-card-title">⚠️ Pending Emergency Appeals</h2>
+                <button class="btn btn-secondary" onclick="document.getElementById('grievance-panel').style.display='none'" style="padding:6px 12px;font-size:0.85rem;">Close</button>
+            </div>
+            <div class="dashboard-card-body" style="padding:0;">
+                <table class="queue-table">
+                    <thead>
+                        <tr>
+                            <th>Appeal #</th>
+                            <th>Token</th>
+                            <th>Dept</th>
+                            <th>Severity</th>
+                            <th>Patient Says</th>
+                            <th>Staff Rejected Because</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="grievance-table-body">
+                        <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-text-muted);">Loading appeals...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/main.js"></script>
     <script>
-        // Login handling
-        document.getElementById('login-form').addEventListener('submit', (e) => {
+
+        // ── Login ────────────────────────────────────────
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            document.getElementById('login-section').style.display = 'none';
-            document.getElementById('dashboard-section').style.display = 'block';
-            SmartQueue.storage.set('adminLoggedIn', true);
+
+            const username = document.getElementById('admin-username').value.trim();
+            const password = document.getElementById('admin-password').value.trim();
+            const btn      = document.getElementById('login-btn');
+            const errBox   = document.getElementById('login-error');
+
+            btn.disabled    = true;
+            btn.textContent = '⏳ Logging in...';
+            errBox.style.display = 'none';
+
+            try {
+                // Call real backend login
+                await api.login(username, password);
+
+                // Success — show dashboard
+                document.getElementById('login-section').style.display  = 'none';
+                document.getElementById('dashboard-section').style.display = 'block';
+                SmartQueue.storage.set('adminLoggedIn', true);
+
+                loadDashboard();
+                startAutoRefresh();
+
+            } catch (err) {
+                errBox.textContent   = '❌ ' + (err.message || 'Invalid credentials');
+                errBox.style.display = 'block';
+                btn.disabled         = false;
+                btn.textContent      = 'Login to Dashboard';
+            }
         });
 
-        document.getElementById('logout-btn')?.addEventListener('click', () => {
+        // ── Logout ───────────────────────────────────────
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            api.logout();
             SmartQueue.storage.remove('adminLoggedIn');
+            stopAutoRefresh();
             location.reload();
         });
 
-        // Check if already logged in
-        if (SmartQueue.storage.get('adminLoggedIn')) {
-            document.getElementById('login-section').style.display = 'none';
+        // ── Auto-restore session ─────────────────────────
+        if (SmartQueue.storage.get('adminLoggedIn') && localStorage.getItem('authToken')) {
+            document.getElementById('login-section').style.display    = 'none';
             document.getElementById('dashboard-section').style.display = 'block';
+            loadDashboard();
+            startAutoRefresh();
         }
 
-        // Queue actions
-        function callNext(btn) {
-            const row = btn.closest('tr');
-            const token = row.querySelector('.queue-token').textContent;
-            addActivity(`<strong>${token}</strong> called to counter`, 'called');
-            row.style.background = 'rgba(var(--color-success-rgb), 0.2)';
-            setTimeout(() => row.remove(), 1000);
-            updateStats();
+        // ── Load dashboard data from real API ────────────
+        async function loadDashboard() {
+            await Promise.all([loadStats(), loadQueueTable()]);
+            document.getElementById('last-updated').textContent =
+                'Updated: ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
 
-        function skipToken(btn) {
-            const row = btn.closest('tr');
-            const token = row.querySelector('.queue-token').textContent;
-            addActivity(`<strong>${token}</strong> skipped`, 'joined');
+        // ── Stats from /api/admin/dashboard ─────────────
+        async function loadStats() {
+            try {
+                const data = await api.getAdminDashboard();
+                document.getElementById('stat-healthcare').textContent = data.healthcare_queue ?? 0;
+                document.getElementById('stat-banking').textContent    = data.banking_queue    ?? 0;
+                document.getElementById('stat-served').textContent     = data.served_today     ?? 0;
+                document.getElementById('stat-avgwait').textContent    = data.avg_wait_time    ?? '0m';
+                // Show pending appeals count
+                const grievanceCount = data.pending_grievances ?? 0;
+                document.getElementById('stat-grievances').textContent = grievanceCount;
+                // Flash red if there are pending appeals
+                const card = document.getElementById('grievance-stat-card');
+                if (card) card.style.outline = grievanceCount > 0 ? '2px solid rgba(239,71,111,0.5)' : 'none';
+            } catch (err) {
+                console.error('Stats load failed:', err.message);
+            }
+        }
+
+        // ── Queue table from /api/admin/queues ───────────
+        async function loadQueueTable() {
             const tbody = document.getElementById('queue-table-body');
-            tbody.appendChild(row);
+            try {
+                const tokens = await api.getAdminQueues();
+
+                if (!tokens || tokens.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align:center; padding:24px; color:var(--color-text-muted);">
+                                No active tokens in queue
+                            </td>
+                        </tr>`;
+                    return;
+                }
+
+                // Apply current filter
+                const filter = document.getElementById('queue-filter').value;
+
+                const filtered = tokens.filter(t => {
+                    if (filter === 'all') return true;
+                    return t.domain === filter;
+                });
+
+                tbody.innerHTML = filtered.map(token => {
+                    const icon     = token.domain === 'healthcare' ? '🏥' : '🏦';
+                    const priority = token.priority || 'normal';
+                    const wait     = token.estimated_wait ? `${token.estimated_wait}m` : '-';
+
+                    const isEmergency = priority === 'emergency';
+                    return `
+                        <tr id="row-${token.token_id}">
+                            <td class="queue-token">${token.token_id}</td>
+                            <td>${icon} ${(token.service || '-').toUpperCase()}</td>
+                            <td><span class="queue-priority ${priority}">${priority}</span></td>
+                            <td>${wait}</td>
+                            <td class="queue-actions">
+                                <button class="btn-call" onclick="callToken('${token.token_id}', this)">Call</button>
+                                <button class="btn-skip" onclick="skipToken('${token.token_id}', this)">Skip</button>
+                                ${isEmergency ? `<button class="btn-reject-emergency" onclick="rejectEmergency('${token.token_id}', this)" title="Reject fake emergency — moves to back of normal queue" style="background:rgba(239,71,111,0.15);color:#ef476f;border:1px solid rgba(239,71,111,0.4);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:0.8rem;">⚠️ Reject</button>` : ''}
+                            </td>
+                        </tr>`;
+                }).join('');
+
+            } catch (err) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align:center; padding:24px; color:#ef476f;">
+                            Failed to load queue: ${err.message}
+                        </td>
+                    </tr>`;
+            }
         }
 
+        // ── Call token — uses real admin endpoint, triggers queue recalculation ──
+        async function callToken(tokenId, btn) {
+            btn.disabled = true;
+            try {
+                await api.adminCallToken(tokenId);
+                addActivity(`<strong>${tokenId}</strong> called to counter`, 'called');
+                const row = document.getElementById(`row-${tokenId}`);
+                if (row) {
+                    row.style.background = 'rgba(6, 214, 160, 0.15)';
+                    setTimeout(() => { row.remove(); loadStats(); }, 1000);
+                }
+            } catch (err) {
+                addActivity(`Failed to call ${tokenId}: ${err.message}`, 'served');
+                btn.disabled = false;
+            }
+        }
+
+        // ── Skip token — real admin endpoint, adds SKIP_GRACE_BUFFER (5 min) ──
+        // Buffer-aware: next person in queue gets grace time so they don't lose spot
+        async function skipToken(tokenId, btn) {
+            btn.disabled = true;
+            try {
+                const result = await api.adminSkipToken(tokenId);
+                addActivity(
+                    `<strong>${tokenId}</strong> skipped — moved to end. +${result.buffer_added || 5}min buffer added for next person`,
+                    'joined'
+                );
+                // Move row to bottom visually
+                const row = document.getElementById(`row-${tokenId}`);
+                if (row) {
+                    // Update wait time cell to show new position
+                    document.getElementById('queue-table-body').appendChild(row);
+                }
+                // Reload table after 1s to show updated ETAs
+                setTimeout(loadQueueTable, 1000);
+            } catch (err) {
+                addActivity(`Failed to skip ${tokenId}: ${err.message}`, 'served');
+            }
+            btn.disabled = false;
+        }
+
+        // ── Reject emergency claim — penalty: back of normal queue ──
+        async function rejectEmergency(tokenId, btn) {
+            const reason = prompt(
+                `Reject emergency claim for ${tokenId}?\n\nEnter reason (required for audit log):\ne.g. "Patient walking normally", "Claimed headache only", "Refused physical check"`
+            );
+            if (reason === null) return;  // cancelled
+            if (!reason.trim()) { alert('Please enter a reason.'); return; }
+
+            btn.disabled = true;
+            try {
+                const result = await fetch(`http://localhost:8000/api/admin/tokens/${tokenId}/reject-emergency`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify({ reason: reason.trim() })
+                });
+                const data = await result.json();
+                const strikesNote = data.total_strikes ? ` (${data.total_strikes}/3 strikes)` : '';
+                const blockedNote = data.emergency_blocked ? ' — BLOCKED from emergency' : '';
+                addActivity(
+                    `<strong>${tokenId}</strong> REJECTED — "${reason}" → pos #${data.new_position}${strikesNote}${blockedNote}`,
+                    'served'
+                );
+                setTimeout(loadQueueTable, 500);
+            } catch (err) {
+                addActivity(`Failed: ${err.message}`, 'served');
+                btn.disabled = false;
+            }
+        }
+
+        // ── Grievance panel ───────────────────────────────────────────────────
+        async function showGrievancePanel() {
+            document.getElementById('grievance-panel').style.display = 'block';
+            await loadGrievances();
+        }
+
+        async function loadGrievances() {
+            const tbody = document.getElementById('grievance-table-body');
+            try {
+                const res  = await fetch('http://localhost:8000/api/grievance/list?status=pending', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                const data = await res.json();
+                if (!data.grievances || data.grievances.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--color-text-muted);">No pending appeals</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = data.grievances.map(g => {
+                    const flagColors = {
+                        'likely_genuine': '#06d6a0',
+                        'needs_check':    '#BA7517',
+                        'suspicious':     '#ef476f'
+                    };
+                    const fc = flagColors[g.severity_flag] || '#888';
+                    return `
+                        <tr id="grievance-row-${g.grievance_id}">
+                            <td>#${g.grievance_id}</td>
+                            <td class="queue-token">${g.token_number || '-'}</td>
+                            <td>${(g.department || '-').toUpperCase()}</td>
+                            <td style="color:${fc};">${g.severity_flag || '-'} (${g.severity_score || '?'}/10)</td>
+                            <td style="font-size:0.82rem;max-width:200px;">${g.description.substring(0, 80)}${g.description.length > 80 ? '...' : ''}</td>
+                            <td style="font-size:0.82rem;color:var(--color-text-muted);">${g.rejection_reason || '-'}</td>
+                            <td>
+                                <button onclick="resolveGrievance(${g.grievance_id}, '${g.token_number}', 'approve')"
+                                    style="background:rgba(6,214,160,0.15);color:#06d6a0;border:1px solid rgba(6,214,160,0.4);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:0.8rem;margin-right:4px;">
+                                    ✓ Approve
+                                </button>
+                                <button onclick="resolveGrievance(${g.grievance_id}, '${g.token_number}', 'reject')"
+                                    style="background:rgba(239,71,111,0.15);color:#ef476f;border:1px solid rgba(239,71,111,0.4);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:0.8rem;">
+                                    ✗ Deny
+                                </button>
+                            </td>
+                        </tr>`;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#ef476f;">Failed to load: ${err.message}</td></tr>`;
+            }
+        }
+
+        async function resolveGrievance(grievanceId, tokenId, action) {
+            const note = prompt(
+                `${action === 'approve' ? 'APPROVE' : 'DENY'} appeal #${grievanceId} for ${tokenId}?\n\n` +
+                `Enter resolution note (required):\n` +
+                (action === 'approve'
+                    ? 'e.g. "Patient showed visible distress, genuine emergency"'
+                    : 'e.g. "No physical signs of emergency on arrival"')
+            );
+            if (note === null) return;
+            if (!note.trim()) { alert('Please enter a resolution note.'); return; }
+
+            try {
+                const res = await fetch(`http://localhost:8000/api/grievance/${grievanceId}/${action}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify({ resolution_note: note.trim(), resolved_by: 'admin' })
+                });
+                const data = await res.json();
+                addActivity(
+                    `Appeal #${grievanceId} (${tokenId}) ${action === 'approve' ? 'APPROVED — emergency restored' : 'DENIED — stays normal queue'}`,
+                    action === 'approve' ? 'served' : 'joined'
+                );
+                document.getElementById(`grievance-row-${grievanceId}`)?.remove();
+                loadStats();
+                loadQueueTable();
+            } catch (err) {
+                alert('Failed: ' + err.message);
+            }
+        }
+
+        // ── Activity feed ─────────────────────────────────
         function addActivity(text, type) {
             const list = document.getElementById('activity-list');
-            const item = document.createElement('li');
+            const icons = { served: '✓', called: '📢', joined: '+' };
+            const item  = document.createElement('li');
             item.className = 'activity-item';
             item.innerHTML = `
-        <div class="activity-icon ${type}">${type === 'served' ? '✓' : type === 'called' ? '📢' : '+'}</div>
-        <div>
-          <div class="activity-text">${text}</div>
-          <div class="activity-time">Just now</div>
-        </div>
-      `;
+                <div class="activity-icon ${type}">${icons[type] || '+'}</div>
+                <div>
+                    <div class="activity-text">${text}</div>
+                    <div class="activity-time">${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
+                </div>`;
             list.insertBefore(item, list.firstChild);
-            if (list.children.length > 10) list.lastChild.remove();
+            if (list.children.length > 15) list.lastChild.remove();
         }
 
-        function updateStats() {
-            const rows = document.querySelectorAll('#queue-table-body tr');
-            let hc = 0, bk = 0;
-            rows.forEach(r => {
-                if (r.querySelector('.queue-token').textContent.startsWith('H')) hc++;
-                else bk++;
-            });
-            document.getElementById('stat-healthcare').textContent = hc;
-            document.getElementById('stat-banking').textContent = bk;
-            const served = parseInt(document.getElementById('stat-served').textContent) + 1;
-            document.getElementById('stat-served').textContent = served;
+        // ── Filter ────────────────────────────────────────
+        document.getElementById('queue-filter').addEventListener('change', loadQueueTable);
+
+        // ── Auto-refresh every 30 seconds ─────────────────
+        let refreshInterval = null;
+
+        function startAutoRefresh() {
+            refreshInterval = setInterval(loadDashboard, 30000);
         }
 
-        // Filter queue
-        document.getElementById('queue-filter')?.addEventListener('change', (e) => {
-            const filter = e.target.value;
-            document.querySelectorAll('#queue-table-body tr').forEach(row => {
-                const token = row.querySelector('.queue-token').textContent;
-                if (filter === 'all') row.style.display = '';
-                else if (filter === 'healthcare') row.style.display = token.startsWith('H') ? '' : 'none';
-                else row.style.display = token.startsWith('B') ? '' : 'none';
-            });
-        });
+        function stopAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+        }
+
     </script>
 </body>
 

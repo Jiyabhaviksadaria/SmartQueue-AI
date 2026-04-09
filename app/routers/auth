@@ -1,0 +1,54 @@
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+
+from app.database.db import get_db
+from app.schemas import UserCreate, Token
+from app.models import User
+from app.auth.auth import (
+    authenticate_user,
+    create_access_token,
+    get_password_hash
+)
+
+router = APIRouter()
+
+
+@router.post("/register")
+def register(user: UserCreate, db: Session = Depends(get_db)):
+    if db.query(User).filter(User.username == user.username).first():
+        raise HTTPException(status_code=400, detail="Username already exists")
+
+    new_user = User(
+        username=user.username,
+        email=user.email,
+        hashed_password=get_password_hash(user.password),
+        full_name=user.full_name,
+        phone=user.phone,
+        role=user.role,
+        is_senior_citizen=user.is_senior_citizen,
+        is_vip=user.is_vip
+    )
+    db.add(new_user)
+    db.commit()
+    return {"message": "User registered successfully"}
+
+
+@router.post("/login", response_model=Token)
+def login(
+    data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    user = authenticate_user(db, data.username, data.password)
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    access_token = create_access_token({"sub": user.username})
+
+    # 🔥 IMPORTANT CHANGE: return user_id
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": user.id   # 🔥 needed for WebSocket
+    }

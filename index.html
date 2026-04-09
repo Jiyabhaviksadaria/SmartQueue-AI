@@ -1,319 +1,346 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="SmartQueue AI - Intelligent queue management for healthcare and banking. Get virtual tokens, AI-predicted wait times, and wait anywhere.">
-  <title>SmartQueue AI - No More Lines</title>
-  
-  <!-- Stylesheets -->
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/animations.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/pages/landing.css">
-  
-  <!-- Favicon -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SmartQueue AI</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages/admin.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
 </head>
-<body class="landing-page">
-  <!-- Navigation -->
-  <nav class="navbar">
-    <div class="navbar-container">
-      <a href="index.html" class="navbar-logo">
-        <div class="navbar-logo-icon">🚀</div>
-        <span>SmartQueue<span class="text-gradient">AI</span></span>
-      </a>
-      
-      <button class="navbar-toggle" aria-label="Toggle menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-      
-      <ul class="navbar-nav">
-        <li><a href="#features" class="navbar-link">Features</a></li>
-        <li><a href="#how-it-works" class="navbar-link">How It Works</a></li>
-        <li><a href="healthcare.html" class="navbar-link">Healthcare</a></li>
-        <li><a href="banking.html" class="navbar-link">Banking</a></li>
-        <li><a href="admin.html" class="btn btn-primary btn-sm">Admin</a></li>
-      </ul>
-    </div>
-  </nav>
 
-  <!-- Hero Section -->
-  <section class="hero">
-    <div class="hero-background">
-      <canvas id="particles-canvas"></canvas>
-      <div class="hero-gradient"></div>
-    </div>
-    
-    <div class="hero-content animate animate-fade-in-up">
-      <div class="hero-badge animate animate-fade-in delay-200">
-        <span>🤖</span>
-        <span>Powered by AI</span>
-      </div>
-      
-      <h1 class="hero-title animate animate-fade-in-up delay-300">
-        No More Standing
-        <span class="hero-title-highlight">In Lines</span>
-      </h1>
-      
-      <p class="hero-subtitle animate animate-fade-in-up delay-400">
-        Get a virtual token, wait anywhere, and know exactly when it's your turn. 
-        AI-predicted wait times with 90%+ accuracy.
-      </p>
-      
-      <div class="hero-cta animate animate-fade-in-up delay-500">
-        <a href="#domains" class="btn btn-primary btn-lg">
-          Get Started
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-        </a>
-        <a href="#how-it-works" class="btn btn-secondary btn-lg">
-          See How It Works
-        </a>
-      </div>
-    </div>
-    
-    <div class="hero-scroll-indicator">
-      <span>Scroll to explore</span>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 5v14M5 12l7 7 7-7"/>
-      </svg>
-    </div>
-  </section>
-
-  <!-- Domain Selection -->
-  <section class="domains-section" id="domains">
-    <div class="section-header reveal">
-      <span class="section-tag">Choose Your Domain</span>
-      <h2 class="section-title">Where Do You Need to Queue?</h2>
-      <p class="section-subtitle">Select your service to get started with intelligent queue management</p>
-    </div>
-    
-    <div class="domains-grid reveal-stagger">
-      <a href="healthcare.html" class="domain-card-large healthcare">
-        <div class="domain-icon">🏥</div>
-        <h3>Healthcare</h3>
-        <p>Hospitals, clinics, and medical facilities with smart priority for emergencies</p>
-        <ul class="domain-features">
-          <li>Emergency priority system</li>
-          <li>Doctor-wise queues</li>
-          <li>Department routing</li>
-          <li>Senior citizen priority</li>
-        </ul>
-        <span class="domain-cta">
-          Enter Healthcare Queue
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-        </span>
-      </a>
-      
-      <a href="banking.html" class="domain-card-large banking">
-        <div class="domain-icon">🏦</div>
-        <h3>Banking</h3>
-        <p>Banks and financial institutions with service-based queue optimization</p>
-        <ul class="domain-features">
-          <li>Service-based routing</li>
-          <li>Counter load balancing</li>
-          <li>Premium customer lanes</li>
-          <li>Multi-service tokens</li>
-        </ul>
-        <span class="domain-cta">
-          Enter Banking Queue
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-        </span>
-      </a>
-    </div>
-  </section>
-
-  <!-- Features Section -->
-  <section class="features-section" id="features">
-    <div class="section-header reveal">
-      <span class="section-tag">Why SmartQueue AI?</span>
-      <h2 class="section-title">Intelligent Features</h2>
-      <p class="section-subtitle">Experience queue management like never before</p>
-    </div>
-    
-    <div class="features-grid reveal-stagger">
-      <div class="feature-card">
-        <div class="feature-icon">🎫</div>
-        <h3>Virtual Tokens</h3>
-        <p>Get a digital queue number instantly. No paper tickets, no physical presence required.</p>
-      </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">🧠</div>
-        <h3>AI Predictions</h3>
-        <p>Our AI predicts your wait time with 90%+ accuracy, updated every 30 seconds.</p>
-      </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">⚡</div>
-        <h3>Smart Priorities</h3>
-        <p>Emergencies and seniors get automatic priority. Fair, transparent, zero bias.</p>
-      </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">📱</div>
-        <h3>Real-Time Updates</h3>
-        <p>Track your position live. Get notified when you're next in line.</p>
-      </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">📊</div>
-        <h3>Analytics Dashboard</h3>
-        <p>Comprehensive insights for administrators to optimize service delivery.</p>
-      </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">🔒</div>
-        <h3>Secure & Private</h3>
-        <p>Your data is encrypted and protected. Role-based access control.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- How It Works -->
-  <section class="how-it-works-section" id="how-it-works">
-    <div class="section-header reveal">
-      <span class="section-tag">Simple Process</span>
-      <h2 class="section-title">How It Works</h2>
-      <p class="section-subtitle">Get started in just a few simple steps</p>
-    </div>
-    
-    <div class="steps-container reveal-stagger">
-      <div class="step">
-        <div class="step-number">1</div>
-        <div class="step-icon">📝</div>
-        <h4>Select Service</h4>
-        <p>Choose your service type and department</p>
-      </div>
-      
-      <div class="step">
-        <div class="step-number">2</div>
-        <div class="step-icon">🎫</div>
-        <h4>Get Token</h4>
-        <p>Receive your virtual queue number instantly</p>
-      </div>
-      
-      <div class="step">
-        <div class="step-number">3</div>
-        <div class="step-icon">☕</div>
-        <h4>Wait Anywhere</h4>
-        <p>Wait at home, car, or nearby café</p>
-      </div>
-      
-      <div class="step">
-        <div class="step-number">4</div>
-        <div class="step-icon">🔔</div>
-        <h4>Get Notified</h4>
-        <p>Receive alert when it's your turn</p>
-      </div>
-      
-      <div class="step">
-        <div class="step-number">5</div>
-        <div class="step-icon">✅</div>
-        <h4>Get Served</h4>
-        <p>Visit counter and complete your service</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Stats Section -->
-  <section class="stats-section">
-    <div class="stats-grid reveal-stagger">
-      <div class="stat-item">
-        <div class="stat-number" data-count="73" data-suffix="%">0%</div>
-        <div class="stat-label">Wait Time Reduction</div>
-      </div>
-      
-      <div class="stat-item">
-        <div class="stat-number" data-count="85" data-suffix="%">0%</div>
-        <div class="stat-label">Less Crowding</div>
-      </div>
-      
-      <div class="stat-item">
-        <div class="stat-number" data-count="90" data-suffix="%">0%</div>
-        <div class="stat-label">Prediction Accuracy</div>
-      </div>
-      
-      <div class="stat-item">
-        <div class="stat-number" data-count="47" data-suffix="%">0%</div>
-        <div class="stat-label">Satisfaction Increase</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA Section -->
-  <section class="cta-section">
-    <div class="cta-card reveal">
-      <div class="cta-content">
-        <h2 class="cta-title">Ready to Skip the Queue?</h2>
-        <p class="cta-subtitle">Join thousands of happy users who never stand in line anymore</p>
-        <div class="cta-buttons">
-          <a href="healthcare.html" class="btn btn-healthcare btn-lg">
-            🏥 Healthcare Queue
-          </a>
-          <a href="banking.html" class="btn btn-banking btn-lg">
-            🏦 Banking Queue
-          </a>
+<body class="admin-page">
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="navbar-logo">
+                <div class="navbar-logo-icon">🚀</div>
+                <span>SmartQueue<span class="text-gradient">AI</span></span>
+            </a>
+            <ul class="navbar-nav">
+                <li><a href="index.html" class="navbar-link">Home</a></li>
+                <li><a href="admin.html" class="navbar-link active">Dashboard</a></li>
+            </ul>
         </div>
-      </div>
-    </div>
-  </section>
+    </nav>
 
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="footer-content">
-      <div class="footer-brand">
-        <a href="index.html" class="navbar-logo">
-          <div class="navbar-logo-icon">🚀</div>
-          <span>SmartQueue<span class="text-gradient">AI</span></span>
-        </a>
-        <p>Intelligent queue management powered by AI. No more wasted time standing in lines.</p>
-      </div>
-      
-      <div class="footer-section">
-        <h4 class="footer-title">Product</h4>
-        <ul class="footer-links">
-          <li><a href="#features">Features</a></li>
-          <li><a href="#how-it-works">How It Works</a></li>
-          <li><a href="healthcare.html">Healthcare</a></li>
-          <li><a href="banking.html">Banking</a></li>
-        </ul>
-      </div>
-      
-      <div class="footer-section">
-        <h4 class="footer-title">Admin</h4>
-        <ul class="footer-links">
-          <li><a href="admin.html">Dashboard</a></li>
-          <li><a href="admin.html#analytics">Analytics</a></li>
-          <li><a href="admin.html#settings">Settings</a></li>
-        </ul>
-      </div>
-      
-      <div class="footer-section">
-        <h4 class="footer-title">Resources</h4>
-        <ul class="footer-links">
-          <li><a href="#">Documentation</a></li>
-          <li><a href="#">API Reference</a></li>
-          <li><a href="#">Support</a></li>
-        </ul>
-      </div>
+    <!-- Login Section -->
+    <div class="login-container" id="login-section">
+        <div class="login-card animate animate-scale-in">
+            <div class="login-icon">🔐</div>
+            <h1 class="login-title">Admin Login</h1>
+            <p class="login-subtitle">Enter credentials to access dashboard</p>
+            <div id="login-error" style="display:none; color:#ef476f; margin-bottom:12px; font-size:0.9rem;"></div>
+            <form class="login-form" id="login-form">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" id="admin-username" placeholder="admin" value="admin">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="admin-password" placeholder="••••••••" value="admin123">
+                </div>
+                <button type="submit" class="btn btn-primary w-full" id="login-btn">Login to Dashboard</button>
+            </form>
+        </div>
     </div>
-    
-    <div class="footer-bottom">
-      <p>&copy; 2026 SmartQueue AI. All rights reserved. Built with ❤️ for better queues.</p>
-    </div>
-  </footer>
 
-  <!-- Scripts -->
-  <script src="js/particles.js"></script>
-  <script src="js/main.js"></script>
+    <!-- Dashboard Section -->
+    <div class="admin-container" id="dashboard-section" style="display: none;">
+        <header class="admin-header animate animate-fade-in">
+            <div>
+                <h1 class="admin-title">Queue Dashboard</h1>
+                <p style="color: var(--color-text-muted);">Real-time queue management</p>
+            </div>
+            <div class="admin-actions">
+                <span id="last-updated" style="color: var(--color-text-muted); font-size:0.85rem; margin-right:12px;"></span>
+                <button class="btn btn-secondary" onclick="loadDashboard()">🔄 Refresh</button>
+                <button class="btn btn-primary" id="logout-btn">Logout</button>
+            </div>
+        </header>
+
+        <!-- Stats Row -->
+        <div class="stats-row animate animate-fade-in-up delay-200">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon healthcare">🏥</div>
+                </div>
+                <div class="stat-card-value" id="stat-healthcare">--</div>
+                <div class="stat-card-label">Healthcare Queue</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon banking">🏦</div>
+                </div>
+                <div class="stat-card-value" id="stat-banking">--</div>
+                <div class="stat-card-label">Banking Queue</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon success">✓</div>
+                </div>
+                <div class="stat-card-value" id="stat-served">--</div>
+                <div class="stat-card-label">Served Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-card-icon warning">⏱️</div>
+                </div>
+                <div class="stat-card-value" id="stat-avgwait">--</div>
+                <div class="stat-card-label">Avg Wait Time</div>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid animate animate-fade-in-up delay-300">
+            <!-- Queue Table -->
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h2 class="dashboard-card-title">Active Queue</h2>
+                    <select class="form-select" style="width: auto; padding: var(--space-2);" id="queue-filter">
+                        <option value="all">All Queues</option>
+                        <option value="healthcare">Healthcare</option>
+                        <option value="banking">Banking</option>
+                    </select>
+                </div>
+                <div class="dashboard-card-body" style="padding: 0;">
+                    <table class="queue-table">
+                        <thead>
+                            <tr>
+                                <th>Token</th>
+                                <th>Service</th>
+                                <th>Priority</th>
+                                <th>Wait</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="queue-table-body">
+                            <tr>
+                                <td colspan="5" style="text-align:center; padding: 24px; color: var(--color-text-muted);">
+                                    Loading queue data...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h2 class="dashboard-card-title">Recent Activity</h2>
+                </div>
+                <div class="dashboard-card-body">
+                    <ul class="activity-list" id="activity-list">
+                        <li class="activity-item">
+                            <div class="activity-icon joined">+</div>
+                            <div>
+                                <div class="activity-text">Waiting for activity...</div>
+                                <div class="activity-time">Just now</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+
+        // ── Login ────────────────────────────────────────
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('admin-username').value.trim();
+            const password = document.getElementById('admin-password').value.trim();
+            const btn      = document.getElementById('login-btn');
+            const errBox   = document.getElementById('login-error');
+
+            btn.disabled    = true;
+            btn.textContent = '⏳ Logging in...';
+            errBox.style.display = 'none';
+
+            try {
+                // Call real backend login
+                await api.login(username, password);
+
+                // Success — show dashboard
+                document.getElementById('login-section').style.display  = 'none';
+                document.getElementById('dashboard-section').style.display = 'block';
+                SmartQueue.storage.set('adminLoggedIn', true);
+
+                loadDashboard();
+                startAutoRefresh();
+
+            } catch (err) {
+                errBox.textContent   = '❌ ' + (err.message || 'Invalid credentials');
+                errBox.style.display = 'block';
+                btn.disabled         = false;
+                btn.textContent      = 'Login to Dashboard';
+            }
+        });
+
+        // ── Logout ───────────────────────────────────────
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            api.logout();
+            SmartQueue.storage.remove('adminLoggedIn');
+            stopAutoRefresh();
+            location.reload();
+        });
+
+        // ── Auto-restore session ─────────────────────────
+        if (SmartQueue.storage.get('adminLoggedIn') && localStorage.getItem('authToken')) {
+            document.getElementById('login-section').style.display    = 'none';
+            document.getElementById('dashboard-section').style.display = 'block';
+            loadDashboard();
+            startAutoRefresh();
+        }
+
+        // ── Load dashboard data from real API ────────────
+        async function loadDashboard() {
+            await Promise.all([loadStats(), loadQueueTable()]);
+            document.getElementById('last-updated').textContent =
+                'Updated: ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        // ── Stats from /api/admin/dashboard ─────────────
+        async function loadStats() {
+            try {
+                const data = await api.getAdminDashboard();
+                document.getElementById('stat-healthcare').textContent = data.healthcare_queue ?? 0;
+                document.getElementById('stat-banking').textContent    = data.banking_queue    ?? 0;
+                document.getElementById('stat-served').textContent     = data.served_today     ?? 0;
+                document.getElementById('stat-avgwait').textContent    = data.avg_wait_time    ?? '0m';
+            } catch (err) {
+                console.error('Stats load failed:', err.message);
+            }
+        }
+
+        // ── Queue table from /api/admin/queues ───────────
+        async function loadQueueTable() {
+            const tbody = document.getElementById('queue-table-body');
+            try {
+                const tokens = await api.getAdminQueues();
+
+                if (!tokens || tokens.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align:center; padding:24px; color:var(--color-text-muted);">
+                                No active tokens in queue
+                            </td>
+                        </tr>`;
+                    return;
+                }
+
+                // Apply current filter
+                const filter = document.getElementById('queue-filter').value;
+
+                const filtered = tokens.filter(t => {
+                    if (filter === 'all') return true;
+                    return t.domain === filter;
+                });
+
+                tbody.innerHTML = filtered.map(token => {
+                    const icon     = token.domain === 'healthcare' ? '🏥' : '🏦';
+                    const priority = token.priority || 'normal';
+                    const wait     = token.estimated_wait ? `${token.estimated_wait}m` : '-';
+
+                    return `
+                        <tr id="row-${token.token_id}">
+                            <td class="queue-token">${token.token_id}</td>
+                            <td>${icon} ${(token.service || '-').toUpperCase()}</td>
+                            <td><span class="queue-priority ${priority}">${priority}</span></td>
+                            <td>${wait}</td>
+                            <td class="queue-actions">
+                                <button class="btn-call" onclick="callToken('${token.token_id}', this)">Call</button>
+                                <button class="btn-skip" onclick="skipToken('${token.token_id}', this)">Skip</button>
+                            </td>
+                        </tr>`;
+                }).join('');
+
+            } catch (err) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align:center; padding:24px; color:#ef476f;">
+                            Failed to load queue: ${err.message}
+                        </td>
+                    </tr>`;
+            }
+        }
+
+        // ── Call token → updates backend ─────────────────
+        async function callToken(tokenId, btn) {
+            btn.disabled = true;
+            try {
+                await api.updateTokenStatus(tokenId, 'called');
+                addActivity(`<strong>${tokenId}</strong> called to counter`, 'called');
+
+                const row = document.getElementById(`row-${tokenId}`);
+                if (row) {
+                    row.style.background = 'rgba(6, 214, 160, 0.15)';
+                    setTimeout(() => { row.remove(); loadStats(); }, 1000);
+                }
+            } catch (err) {
+                addActivity(`Failed to call ${tokenId}: ${err.message}`, 'served');
+                btn.disabled = false;
+            }
+        }
+
+        // ── Skip token → moves to end of queue ───────────
+        async function skipToken(tokenId, btn) {
+            btn.disabled = true;
+            try {
+                await api.updateTokenStatus(tokenId, 'waiting');
+                addActivity(`<strong>${tokenId}</strong> skipped`, 'joined');
+
+                // Move row to bottom of table visually
+                const row = document.getElementById(`row-${tokenId}`);
+                if (row) {
+                    document.getElementById('queue-table-body').appendChild(row);
+                }
+            } catch (err) {
+                addActivity(`Failed to skip ${tokenId}: ${err.message}`, 'served');
+            }
+            btn.disabled = false;
+        }
+
+        // ── Activity feed ─────────────────────────────────
+        function addActivity(text, type) {
+            const list = document.getElementById('activity-list');
+            const icons = { served: '✓', called: '📢', joined: '+' };
+            const item  = document.createElement('li');
+            item.className = 'activity-item';
+            item.innerHTML = `
+                <div class="activity-icon ${type}">${icons[type] || '+'}</div>
+                <div>
+                    <div class="activity-text">${text}</div>
+                    <div class="activity-time">${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
+                </div>`;
+            list.insertBefore(item, list.firstChild);
+            if (list.children.length > 15) list.lastChild.remove();
+        }
+
+        // ── Filter ────────────────────────────────────────
+        document.getElementById('queue-filter').addEventListener('change', loadQueueTable);
+
+        // ── Auto-refresh every 30 seconds ─────────────────
+        let refreshInterval = null;
+
+        function startAutoRefresh() {
+            refreshInterval = setInterval(loadDashboard, 30000);
+        }
+
+        function stopAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+        }
+
+    </script>
 </body>
+
 </html>

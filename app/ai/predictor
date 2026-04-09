@@ -27,4 +27,3 @@ class WaitTimePredictor:
         )[0]
 
         return max(1, int(prediction))
-
