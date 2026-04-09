@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grievance / Emergency Appeal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-color: #0a0a0f;
+      --card-bg: #12121a;
+      --green: #00e5a0;
+      --red: #ff4d6d;
+      --yellow: #f9c846;
+      --text-primary: #e0e0e0;
+      --text-muted: #a0a0a0;
+    }
+    body {
+      margin: 0;
+      font-family: "DM Sans", sans-serif;
+      background: var(--bg-color);
+      color: var(--text-primary);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    h1 {
+      font-family: "Syne", sans-serif;
+      text-align: center;
+      margin-bottom: 1rem;
+      color: var(--green);
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: 500;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.6rem;
+      margin-top: 0.4rem;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background: #1a1a24;
+      color: var(--text-primary);
+      font-family: inherit;
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    .btn {
+      margin-top: 1.5rem;
+      padding: 0.8rem 1.2rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn-primary { background: var(--green); color: #000; }
+    .btn-primary:hover { background: #00c58a; }
+    .status {
+      margin-top: 1rem;
+      padding: 0.8rem;
+      border-radius: 6px;
+      background: #1a1a24;
+    }
+    .error { color: var(--red); }
+    .success { color: var(--green); }
+    .otp-section { display: flex; gap: 0.5rem; align-items: center; }
+    .otp-section input { flex: 1; }
+    .otp-section button { flex: 0 0 auto; background: var(--yellow); color: #000; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Grievance / Emergency Appeal</h1>
+    <form id="grievanceForm">
+      <label for="token">Token Number</label>
+      <input type="text" id="token" name="token" required />
+
+      <label for="phone">Phone Number</label>
+      <div class="otp-section">
+        <input type="tel" id="phone" name="phone" placeholder="e.g., 9876543210" required />
+        <button type="button" id="sendOtpBtn" class="btn" style="background:#f9c846;color:#000;">Send OTP</button>
+      </div>
+      <label for="otp" style="margin-top:0.5rem;">Enter OTP</label>
+      <input type="text" id="otp" name="otp" required disabled />
+
+      <label for="reason">Reason</label>
+      <select id="reason" name="reason" required>
+        <option value="emergency" style="color: var(--red);">Emergency</option>
+        <option value="senior" style="color: var(--yellow);">Senior Citizen</option>
+        <option value="regular" style="color: var(--green);">Regular</option>
+      </select>
+
+      <label for="description">Description</label>
+      <textarea id="description" name="description" placeholder="Provide details..." required></textarea>
+
+      <button type="submit" class="btn btn-primary">Submit Appeal</button>
+    </form>
+    <div id="message" class="status"></div>
+    <div id="statusSection" class="status" style="display:none;">
+      <strong>Current Status:</strong> <span id="currentStatus"></span>
+    </div>
+  </div>
+
+  <script>
+    const apiBase = "http://127.0.0.1:8080";
+    const form = document.getElementById('grievanceForm');
+    const messageDiv = document.getElementById('message');
+    const statusDiv = document.getElementById('statusSection');
+    const currentStatusSpan = document.getElementById('currentStatus');
+    const sendOtpBtn = document.getElementById('sendOtpBtn');
+    const otpInput = document.getElementById('otp');
+    let generatedOtp = '';
+    let pollingInterval = null;
+
+    function showMessage(msg, type='') {
+      messageDiv.textContent = msg;
+      messageDiv.className = 'status';
+      if (type) messageDiv.classList.add(type);
+    }
+
+    // Simple client‑side OTP (for demo only)
+    sendOtpBtn.addEventListener('click', () => {
+      const phone = document.getElementById('phone').value.trim();
+      if (!phone) { showMessage('Enter phone number first.', 'error'); return; }
+      generatedOtp = Math.floor(100000 + Math.random()*900000).toString();
+      // In real app, send OTP via SMS gateway here.
+      alert(`Your OTP is ${generatedOtp}`);
+      otpInput.disabled = false;
+      otpInput.focus();
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      // Validate OTP
+      if (otpInput.value !== generatedOtp) {
+        showMessage('Invalid OTP. Please try again.', 'error');
+        return;
+      }
+      const payload = {
+        token_number: document.getElementById('token').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        reason_code: document.getElementById('reason').value
+      };
+      try {
+        const resp = await fetch(`${apiBase}/api/grievance/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!resp.ok) throw new Error(`Server responded ${resp.status}`);
+        const data = await resp.json();
+        showMessage('Appeal submitted successfully! Tracking status...', 'success');
+        // Start polling
+        startPolling(payload.token_number);
+      } catch (err) {
+        console.error(err);
+        showMessage('Failed to submit appeal. Please try again later.', 'error');
+      }
+    });
+
+    function startPolling(token) {
+      statusDiv.style.display = 'block';
+      async function poll() {
+        try {
+          const resp = await fetch(`${apiBase}/api/grievance/status/${encodeURIComponent(token)}`);
+          if (!resp.ok) throw new Error('status fetch failed');
+          const data = await resp.json();
+          const status = data.status || 'unknown';
+          currentStatusSpan.textContent = status;
+          if (status.toLowerCase() === 'rejected') {
+            // Show rejection popup
+            alert('Your emergency appeal has been rejected.');
+            // Reset form for new submission
+            form.reset();
+            otpInput.disabled = true;
+            generatedOtp = '';
+            statusDiv.style.display = 'none';
+            // Stop polling
+            if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; }
+          }
+        } catch (e) {
+          currentStatusSpan.textContent = 'error fetching status';
+        }
+      }
+      poll(); // immediate
+      if (pollingInterval) clearInterval(pollingInterval);
+      pollingInterval = setInterval(poll, 30000);
+    }
+      
+      async function poll() {
+        try {
+          const resp = await fetch(`${apiBase}/api/grievance/status/${encodeURIComponent(token)}`);
+          if (!resp.ok) throw new Error('status fetch failed');
+          const data = await resp.json();
+          currentStatusSpan.textContent = data.status || 'unknown';
+        } catch (e) {
+          currentStatusSpan.textContent = 'error fetching status';
+        }
+      }
+      poll(); // immediate
+      if (pollingInterval) clearInterval(pollingInterval);
+      pollingInterval = setInterval(poll, 30000);
+    }
+  </script>
+</body>
+</html>

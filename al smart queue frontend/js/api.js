@@ -7,7 +7,6 @@ class SmartQueueAPI {
         this.ws = null;
     }
 
-    // Helper method for making requests
     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
         const headers = {
@@ -20,10 +19,7 @@ class SmartQueueAPI {
         }
 
         try {
-            const response = await fetch(url, {
-                ...options,
-                headers
-            });
+            const response = await fetch(url, { ...options, headers });
 
             if (!response.ok) {
                 const error = await response.json().catch(() => ({ detail: 'Request failed' }));
@@ -37,7 +33,7 @@ class SmartQueueAPI {
         }
     }
 
-    // Authentication
+    // ── Auth ──────────────────────────────────────
     async login(username, password) {
         const formData = new URLSearchParams();
         formData.append('username', username);
@@ -45,9 +41,7 @@ class SmartQueueAPI {
 
         const response = await this.request(API_CONFIG.ENDPOINTS.LOGIN, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: formData
         });
 
@@ -63,7 +57,7 @@ class SmartQueueAPI {
         });
     }
 
-    // Healthcare APIs
+    // ── Healthcare ────────────────────────────────
     async createHealthcareToken(tokenData) {
         return await this.request(API_CONFIG.ENDPOINTS.HEALTHCARE_TOKEN, {
             method: 'POST',
@@ -85,7 +79,7 @@ class SmartQueueAPI {
         return await this.request(`${API_CONFIG.ENDPOINTS.HEALTHCARE_QUEUE}${params}`);
     }
 
-    // Banking APIs
+    // ── Banking ───────────────────────────────────
     async createBankingToken(tokenData) {
         return await this.request(API_CONFIG.ENDPOINTS.BANKING_TOKEN, {
             method: 'POST',
@@ -104,33 +98,34 @@ class SmartQueueAPI {
         return await this.request(`${API_CONFIG.ENDPOINTS.BANKING_QUEUE}${params}`);
     }
 
-    // Token Management
+    // ── Token Management ──────────────────────────
     async getToken(tokenId) {
         return await this.request(`${API_CONFIG.ENDPOINTS.GET_TOKEN}/${tokenId}`);
     }
 
+    // FIX 1: Was building /api/tokens/{id} — now correctly builds /api/tokens/{id}/position
     async getTokenPosition(tokenId) {
-        return await this.request(`${API_CONFIG.ENDPOINTS.QUEUE_POSITION}/${tokenId}`);
+        return await this.request(`${API_CONFIG.ENDPOINTS.QUEUE_POSITION}/${tokenId}/position`);
     }
 
+    // FIX 2: Was PUT /api/tokens/{id} — backend expects PATCH /api/tokens/{id}/status
     async updateTokenStatus(tokenId, status) {
-        return await this.request(`${API_CONFIG.ENDPOINTS.UPDATE_TOKEN}/${tokenId}`, {
-            method: 'PUT',
+        return await this.request(`${API_CONFIG.ENDPOINTS.UPDATE_TOKEN}/${tokenId}/status`, {
+            method: 'PATCH',
             body: JSON.stringify({ status })
         });
     }
 
-    // Queue Status
     async getQueueStatus(queueType, queueId) {
         return await this.request(`${API_CONFIG.ENDPOINTS.QUEUE_STATUS}/${queueType}/${queueId}`);
     }
 
-    // Analytics
+    // ── Analytics ─────────────────────────────────
     async getAnalytics(timeRange = '24h') {
         return await this.request(`${API_CONFIG.ENDPOINTS.ANALYTICS}?range=${timeRange}`);
     }
 
-    // Admin APIs
+    // ── Admin ─────────────────────────────────────
     async getAdminDashboard() {
         return await this.request(API_CONFIG.ENDPOINTS.ADMIN_DASHBOARD);
     }
@@ -139,13 +134,40 @@ class SmartQueueAPI {
         return await this.request(API_CONFIG.ENDPOINTS.ADMIN_QUEUES);
     }
 
+    // FIX 3: Was /api/admin/queues/{id}/next — backend endpoint is /call-next
     async callNextToken(queueId) {
-        return await this.request(`${API_CONFIG.ENDPOINTS.ADMIN_QUEUES}/${queueId}/next`, {
+        return await this.request(`${API_CONFIG.ENDPOINTS.ADMIN_QUEUES}/${queueId}/call-next`, {
             method: 'POST'
         });
     }
 
-    // WebSocket Connection
+    // ── Admin token actions (new) ─────────────────────
+    // Call a specific token to counter — triggers buffer-aware recalculation
+    async adminCallToken(tokenId) {
+        return await this.request(`/api/admin/tokens/${tokenId}/call`, { method: 'PATCH' });
+    }
+
+    // Skip token — moves to end, adds SKIP_GRACE_BUFFER for next person
+    async adminSkipToken(tokenId) {
+        return await this.request(`/api/admin/tokens/${tokenId}/skip`, { method: 'PATCH' });
+    }
+
+    // Complete service for a token — marks done, recalculates queue
+    async adminCompleteToken(tokenId) {
+        return await this.request(`/api/admin/tokens/${tokenId}/complete`, { method: 'PATCH' });
+    }
+
+    // Emergency fraud: reject claim, penalty-move to back of normal queue
+    async rejectEmergencyClaim(tokenId) {
+        return await this.request(`/api/admin/tokens/${tokenId}/reject-emergency`, { method: 'PATCH' });
+    }
+
+    // Buffer-aware cancel — protects users with low ETA from losing their slot
+    async cancelToken(tokenId) {
+        return await this.request(`/api/tokens/${tokenId}`, { method: 'DELETE' });
+    }
+
+    // ── WebSocket ─────────────────────────────────
     connectWebSocket(clientId, onMessage) {
         if (this.ws) {
             this.ws.close();
@@ -153,19 +175,19 @@ class SmartQueueAPI {
 
         this.ws = new WebSocket(`${this.wsURL}/ws/${clientId}`);
 
-        this.ws.onopen = () => {
-            console.log('WebSocket connected');
-        };
+        this.ws.onopen = () => console.log('WebSocket connected');
 
         this.ws.onmessage = (event) => {
             if (onMessage) {
-                onMessage(JSON.parse(event.data));
+                try {
+                    onMessage(JSON.parse(event.data));
+                } catch {
+                    onMessage({ type: 'raw', data: event.data });
+                }
             }
         };
 
-        this.ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
-        };
+        this.ws.onerror = (error) => console.error('WebSocket error:', error);
 
         this.ws.onclose = () => {
             console.log('WebSocket disconnected');
@@ -184,10 +206,9 @@ class SmartQueueAPI {
     }
 }
 
-// Create global API instance
+// Global instance
 const api = new SmartQueueAPI();
 
-// Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = SmartQueueAPI;
 }
