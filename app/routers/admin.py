@@ -27,6 +27,7 @@ from app.services.queue_engine import (
     SKIP_GRACE_BUFFER,
 )
 from app.services.priority_engine import add_strike
+from app.services.websocket_manager import manager
 
 router = APIRouter()
 
@@ -241,6 +242,23 @@ def reject_emergency_claim(
             token_id     = token_id,
             new_position = result.get("new_position", 0)
         )
+
+    # Send WebSocket notification to user
+    import asyncio
+    async def send_rejection_notification():
+        await manager.send_personal_message({
+            "type": "token_rejected",
+            "token_id": token_id,
+            "message": "Your token has been rejected",
+            "reason": payload.reason or "Rejected by staff",
+            "new_position": result.get("new_position", 0),
+            "can_appeal": True
+        }, token_id)
+    
+    try:
+        asyncio.create_task(send_rejection_notification())
+    except Exception as e:
+        print(f"WebSocket notification error: {e}")
 
     return result
 

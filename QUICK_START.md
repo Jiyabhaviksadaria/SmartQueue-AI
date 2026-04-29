@@ -17,6 +17,7 @@ start.bat
 cd app
 uvicorn main:app --reload --port 8000
 
+
 # Terminal 2 - Frontend
 cd "al smart queue frontend"
 python -m http.server 3000

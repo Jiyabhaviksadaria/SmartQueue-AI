@@ -125,6 +125,36 @@
     let generatedOtp = '';
     let pollingInterval = null;
 
+    // Pre-fill form from rejection modal
+    function prefillFormFromRejection() {
+      const grievanceData = sessionStorage.getItem('grievanceData');
+      if (grievanceData) {
+        try {
+          const data = JSON.parse(grievanceData);
+          if (data.token_number) {
+            document.getElementById('token').value = data.token_number;
+          }
+          if (data.phone) {
+            document.getElementById('phone').value = data.phone;
+          }
+          if (data.reason_code === 'emergency_rejected') {
+            document.getElementById('reason').value = 'emergency';
+            // Add a note about the rejection
+            const descriptionField = document.getElementById('description');
+            descriptionField.placeholder = 'Explain why this is a genuine emergency (rejected claim)...';
+            descriptionField.focus();
+          }
+          // Clear the sessionStorage after using it
+          sessionStorage.removeItem('grievanceData');
+        } catch (e) {
+          console.error('Error parsing grievance data:', e);
+        }
+      }
+    }
+
+    // Call prefill on page load
+    document.addEventListener('DOMContentLoaded', prefillFormFromRejection);
+
     function showMessage(msg, type='') {
       messageDiv.textContent = msg;
       messageDiv.className = 'status';

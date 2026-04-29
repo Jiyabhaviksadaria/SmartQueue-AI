@@ -518,6 +518,293 @@
     transition: width 0.5s ease-out;
 }
 
+/* ============================================
+   Modal / Dialog
+   ============================================ */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.modal.active {
+    pointer-events: all;
+}
+
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+    position: relative;
+    z-index: 1001;
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-2xl);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease-out;
+}
+
+.modal-header {
+    padding: var(--space-6);
+    border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-3);
+}
+
+.modal-header.rejection {
+    background: linear-gradient(135deg, rgba(255, 77, 109, 0.1), rgba(255, 77, 109, 0.05));
+    border-bottom-color: rgba(255, 77, 109, 0.2);
+}
+
+.modal-icon {
+    font-size: 3rem;
+    line-height: 1;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: var(--text-xl);
+    color: var(--color-text);
+}
+
+.modal-body {
+    padding: var(--space-6);
+}
+
+.rejection-message {
+    font-size: var(--text-base);
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-4) 0;
+    line-height: 1.6;
+}
+
+.rejection-details {
+    background: rgba(var(--color-elevated-rgb), 0.5);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.1);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin: var(--space-4) 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.detail-label {
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+}
+
+.detail-value {
+    color: var(--color-text);
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.rejection-info {
+    background: rgba(6, 214, 160, 0.08);
+    border: 1px solid rgba(6, 214, 160, 0.2);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin: var(--space-4) 0;
+}
+
+.rejection-info p {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+.modal-actions {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-6);
+    border-top: 1px solid rgba(var(--color-primary-rgb), 0.1);
+    flex-wrap: wrap;
+}
+
+.modal-actions .btn {
+    flex: 1;
+    min-width: 150px;
+}
+
+@media (max-width: 600px) {
+    .modal-content {
+        width: 95%;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+    }
+    
+    .modal-actions .btn {
+        width: 100%;
+    }
+}
+
+/* ============================================
+   Toast Notifications
+   ============================================ */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    background: rgba(var(--color-surface-rgb), 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    min-width: 320px;
+    max-width: 400px;
+    box-shadow: var(--shadow-lg);
+    pointer-events: all;
+}
+
+.toast.rejection {
+    border-color: rgba(255, 77, 109, 0.3);
+    background: linear-gradient(135deg, rgba(255, 77, 109, 0.08), rgba(255, 77, 109, 0.04));
+}
+
+.toast.success {
+    border-color: rgba(6, 214, 160, 0.3);
+    background: linear-gradient(135deg, rgba(6, 214, 160, 0.08), rgba(6, 214, 160, 0.04));
+}
+
+.toast-icon {
+    flex-shrink: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+    margin-top: 2px;
+}
+
+.toast-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.toast-title {
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: var(--text-sm);
+}
+
+.toast-message {
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+}
+
+.toast-close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 0;
+    font-size: 1.2rem;
+    transition: color var(--transition-fast);
+}
+
+.toast-close:hover {
+    color: var(--color-text);
+}
+
+.toast-action {
+    margin-top: var(--space-2);
+    font-size: var(--text-xs);
+}
+
+.toast-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity var(--transition-fast);
+}
+
+.toast-link:hover {
+    opacity: 0.8;
+}
+
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, rgba(255, 77, 109, 0.6), rgba(255, 77, 109, 0.2));
+    border-radius: 0 0 var(--radius-lg) 0;
+    animation: progressBar 5s linear forwards;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(420px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes progressBar {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}
+
+@media (max-width: 600px) {
+    .toast-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+    }
+
+    .toast {
+        min-width: auto;
+        max-width: 100%;
+    }
+}
+
 .queue-info {
     display: flex;
     justify-content: space-between;

@@ -40,7 +40,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             
             if (message.type === 'your_turn') {
-                showNotification('Your Turn!', 'Please proceed to the counter', 'success');
+                showToast('Your Turn!', 'Please proceed to the counter', 'success', '✓');
+            }
+
+            // Handle token rejection notification
+            if (message.type === 'token_rejected') {
+                showRejectionToast(message);
             }
         });
     } catch (error) {
@@ -66,9 +71,103 @@ document.addEventListener('DOMContentLoaded', async () => {
         downloadTokenAsImage(tokenData);
     });
 
-    function showNotification(title, message, type) {
-        // Simple notification - can be enhanced
-        alert(`${title}\n${message}`);
+    // Toast notification functions
+    function showToast(title, message, type = 'info', icon = 'ℹ️', duration = 5000, action = null) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const progressBar = document.createElement('div');
+        progressBar.className = 'toast-progress';
+        
+        const content = document.createElement('div');
+        content.className = 'toast-content';
+        
+        const titleEl = document.createElement('div');
+        titleEl.className = 'toast-title';
+        titleEl.textContent = title;
+        
+        const messageEl = document.createElement('div');
+        messageEl.className = 'toast-message';
+        messageEl.textContent = message;
+        
+        content.appendChild(titleEl);
+        content.appendChild(messageEl);
+        
+        // Add action button if provided
+        if (action) {
+            const actionEl = document.createElement('div');
+            actionEl.className = 'toast-action';
+            const link = document.createElement('span');
+            link.className = 'toast-link';
+            link.textContent = action.label;
+            link.addEventListener('click', action.callback);
+            actionEl.appendChild(link);
+            content.appendChild(actionEl);
+        }
+        
+        const iconEl = document.createElement('div');
+        iconEl.className = 'toast-icon';
+        iconEl.textContent = icon;
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'toast-close';
+        closeBtn.innerHTML = '✕';
+        closeBtn.addEventListener('click', () => {
+            toast.remove();
+        });
+        
+        toast.appendChild(iconEl);
+        toast.appendChild(content);
+        toast.appendChild(closeBtn);
+        toast.appendChild(progressBar);
+        
+        container.appendChild(toast);
+        
+        // Auto remove after duration
+        if (duration > 0) {
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, duration);
+        }
+    }
+
+    // Rejection toast notification with action
+    function showRejectionToast(message) {
+        // Store rejection data for grievance form
+        sessionStorage.setItem('rejectionData', JSON.stringify({
+            token_id: message.token_id || tokenData.id,
+            reason: message.reason || 'Rejected by staff',
+            phone: tokenData.phone || '',
+            rejection_time: new Date().toISOString()
+        }));
+
+        const reason = message.reason || 'Rejected by staff';
+        const toastMessage = `Reason: ${reason}\nToken: ${message.token_id || tokenData.id}`;
+        
+        showToast(
+            'Token Rejected ⚠️',
+            toastMessage,
+            'rejection',
+            '⚠️',
+            0, // Don't auto-dismiss
+            {
+                label: 'File Appeal →',
+                callback: () => {
+                    // Pass token data to grievance form
+                    const rejectionData = JSON.parse(sessionStorage.getItem('rejectionData') || '{}');
+                    sessionStorage.setItem('grievanceData', JSON.stringify({
+                        token_number: rejectionData.token_id,
+                        phone: rejectionData.phone,
+                        reason_code: 'emergency_rejected',
+                        pre_filled: true
+                    }));
+                    window.location.href = 'grievance.html';
+                }
+            }
+        );
     }
 });
 
