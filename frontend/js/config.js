@@ -1,7 +1,14 @@
 // API Configuration
+// Automatically uses deployed backend on production, localhost in development
+const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+const BACKEND_URL = IS_LOCAL
+    ? 'http://localhost:8000'
+    : 'https://smartqueue-ai.onrender.com';   // ← UPDATE this after Render deployment
+
 const API_CONFIG = {
-    BASE_URL: 'http://localhost:8000',
-    WS_URL: 'ws://localhost:8000',
+    BASE_URL: BACKEND_URL,
+    WS_URL:   BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://'),
     ENDPOINTS: {
         // Auth
         LOGIN:    '/api/auth/login',
@@ -11,9 +18,6 @@ const API_CONFIG = {
         CREATE_TOKEN: '/api/tokens',
         GET_TOKEN:    '/api/tokens',
         UPDATE_TOKEN: '/api/tokens',
-
-        // FIX 1: Must end with /{id}/position, so base is /api/tokens
-        // getTokenPosition() builds: /api/tokens/{id}/position  ✅
         QUEUE_POSITION: '/api/tokens',
 
         // Healthcare
