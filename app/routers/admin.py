@@ -35,12 +35,8 @@ router = APIRouter()
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
 def verify_logged_in(authorization: Optional[str] = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    token = authorization.split(" ")[1]
-    if not token or token in ("null", "undefined", ""):
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return token
+    # BYPASSED FOR NOW AS REQUESTED BY USER
+    return "dummy_token"
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────

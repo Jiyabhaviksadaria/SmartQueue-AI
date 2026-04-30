@@ -27,29 +27,12 @@
         </div>
     </nav>
 
-    <!-- Login Section -->
-    <div class="login-container" id="login-section">
-        <div class="login-card animate animate-scale-in">
-            <div class="login-icon">🔐</div>
-            <h1 class="login-title">Admin Login</h1>
-            <p class="login-subtitle">Enter credentials to access dashboard</p>
-            <div id="login-error" style="display:none; color:#ef476f; margin-bottom:12px; font-size:0.9rem;"></div>
-            <form class="login-form" id="login-form">
-                <div class="form-group">
-                    <label class="form-label">Username</label>
-                    <input type="text" class="form-input" id="admin-username" placeholder="admin" value="admin">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="admin-password" placeholder="••••••••" value="admin123">
-                </div>
-                <button type="submit" class="btn btn-primary w-full" id="login-btn">Login to Dashboard</button>
-            </form>
-        </div>
+    <!-- Login Section Bypassed -->
+    <div class="login-container" id="login-section" style="display: none;">
     </div>
 
     <!-- Dashboard Section -->
-    <div class="admin-container" id="dashboard-section" style="display: none;">
+    <div class="admin-container" id="dashboard-section" style="display: block;">
         <header class="admin-header animate animate-fade-in">
             <div>
                 <h1 class="admin-title">Queue Dashboard</h1>
@@ -58,7 +41,6 @@
             <div class="admin-actions">
                 <span id="last-updated" style="color: var(--color-text-muted); font-size:0.85rem; margin-right:12px;"></span>
                 <button class="btn btn-secondary" onclick="loadDashboard()">🔄 Refresh</button>
-                <button class="btn btn-primary" id="logout-btn">Logout</button>
             </div>
         </header>
 
@@ -186,54 +168,11 @@
     <script src="js/main.js"></script>
     <script>
 
-        // ── Login ────────────────────────────────────────
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const username = document.getElementById('admin-username').value.trim();
-            const password = document.getElementById('admin-password').value.trim();
-            const btn      = document.getElementById('login-btn');
-            const errBox   = document.getElementById('login-error');
-
-            btn.disabled    = true;
-            btn.textContent = '⏳ Logging in...';
-            errBox.style.display = 'none';
-
-            try {
-                // Call real backend login
-                await api.login(username, password);
-
-                // Success — show dashboard
-                document.getElementById('login-section').style.display  = 'none';
-                document.getElementById('dashboard-section').style.display = 'block';
-                SmartQueue.storage.set('adminLoggedIn', true);
-
-                loadDashboard();
-                startAutoRefresh();
-
-            } catch (err) {
-                errBox.textContent   = '❌ ' + (err.message || 'Invalid credentials');
-                errBox.style.display = 'block';
-                btn.disabled         = false;
-                btn.textContent      = 'Login to Dashboard';
-            }
-        });
-
-        // ── Logout ───────────────────────────────────────
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            api.logout();
-            SmartQueue.storage.remove('adminLoggedIn');
-            stopAutoRefresh();
-            location.reload();
-        });
-
-        // ── Auto-restore session ─────────────────────────
-        if (SmartQueue.storage.get('adminLoggedIn') && localStorage.getItem('authToken')) {
-            document.getElementById('login-section').style.display    = 'none';
-            document.getElementById('dashboard-section').style.display = 'block';
+        // ── Auto-load Dashboard (Login Bypassed) ─────────
+        document.addEventListener('DOMContentLoaded', () => {
             loadDashboard();
             startAutoRefresh();
-        }
+        });
 
         // ── Load dashboard data from real API ────────────
         async function loadDashboard() {
