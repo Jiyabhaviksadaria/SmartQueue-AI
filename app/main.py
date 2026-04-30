@@ -9,7 +9,7 @@ from app.routers.slots     import router as slots_router
 from app.routers.grievance import router as grievance_router
 from app.services.websocket_manager import manager
 from app.ai.predictor import WaitTimePredictor
-from app.models import Token, TokenStatus
+from app.models import Token, TokenStatus, User, UserRole
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 predictor = WaitTimePredictor()
@@ -70,9 +70,39 @@ async def run_daily_activation():
         db.close()
 
 
+def seed_admin_user():
+    """Create default admin user if it doesn't exist. Runs at every startup."""
+    from app.auth.auth import get_password_hash
+    db = next(get_db())
+    try:
+        existing = db.query(User).filter(User.username == "admin").first()
+        if not existing:
+            admin = User(
+                username="admin",
+                email="admin@smartqueue.ai",
+                hashed_password=get_password_hash("admin123"),
+                full_name="System Admin",
+                phone="0000000000",
+                role=UserRole.ADMIN,
+                is_active=True,
+                is_senior_citizen=False,
+                is_vip=False
+            )
+            db.add(admin)
+            db.commit()
+            print("[Seed] Admin user created — username: admin, password: admin123")
+        else:
+            print("[Seed] Admin user already exists — skipping.")
+    except Exception as e:
+        print(f"[Seed] Admin seed error: {e}")
+    finally:
+        db.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    seed_admin_user()           # ← ensure admin always exists
     predictor.train_initial_model()
     scheduler.add_job(run_expiry_check,     'interval', minutes=5,        id='expiry')
     scheduler.add_job(run_daily_activation, 'cron',     hour=0, minute=1, id='activate')
