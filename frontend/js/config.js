@@ -2,9 +2,7 @@
 // Automatically uses deployed backend on production, localhost in development
 const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-const BACKEND_URL = IS_LOCAL
-    ? 'http://localhost:8000'
-    : 'https://smartqueue-ai-5wf2.onrender.com'; // ✅ Render deployment URL
+const BACKEND_URL = 'https://smartqueue-ai-5wf2.onrender.com';
 
 const API_CONFIG = {
     BASE_URL: BACKEND_URL,
