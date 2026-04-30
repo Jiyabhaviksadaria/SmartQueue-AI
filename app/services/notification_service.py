@@ -16,7 +16,7 @@ from typing import Optional
 
 SMS_ENABLED        = True                                 # ← True when ready
 TWILIO_ACCOUNT_SID = "ACe78da0883e7842d77be673e9b5d2348b"  # console.twilio.com
-TWILIO_AUTH_TOKEN  = "8970d1615f0b1917bc531258798feabb"    # console.twilio.com
+TWILIO_AUTH_TOKEN  = "0e73e6a64c83139b501b164ace086db5"    # console.twilio.com
 TWILIO_FROM_NUMBER = "+18146322052"                        # your Twilio number
 
 APP_NAME = "SmartQueue"
