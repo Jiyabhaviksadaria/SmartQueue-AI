@@ -52,3 +52,35 @@ def login(
         "token_type": "bearer",
         "user_id": user.id   # 🔥 needed for WebSocket
     }
+
+
+@router.post("/seed-admin")
+def seed_admin(db: Session = Depends(get_db)):
+    """
+    One-time endpoint to create the default admin user on the server.
+    Safe to call multiple times — skips if admin already exists.
+    """
+    from app.models import UserRole
+    existing = db.query(User).filter(User.username == "admin").first()
+    if existing:
+        # Update role and password to ensure it's correct
+        existing.role = UserRole.ADMIN
+        existing.hashed_password = get_password_hash("admin123")
+        existing.is_active = True
+        db.commit()
+        return {"message": "Admin user already exists — password reset to admin123", "username": "admin"}
+
+    admin = User(
+        username="admin",
+        email="admin@smartqueue.ai",
+        hashed_password=get_password_hash("admin123"),
+        full_name="System Admin",
+        phone="0000000000",
+        role=UserRole.ADMIN,
+        is_active=True,
+        is_senior_citizen=False,
+        is_vip=False
+    )
+    db.add(admin)
+    db.commit()
+    return {"message": "Admin user created successfully", "username": "admin", "password": "admin123"}
