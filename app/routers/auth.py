@@ -70,9 +70,12 @@ def seed_admin(db: Session = Depends(get_db)):
         ModelBase.metadata.create_all(bind=engine)
 
         existing = db.query(User).filter(User.username == "admin").first()
+        # Hardcoded bcrypt hash for "admin123" to bypass passlib 72-byte bug on Render
+        admin_hash = "$2b$12$W44EQGxjBISmmQQCZ1EKsu1v8DpiiPwtQVAcriNPlxJZm6agpOu6a"
+        
         if existing:
             existing.role = UserRole.ADMIN
-            existing.hashed_password = get_password_hash("admin123")
+            existing.hashed_password = admin_hash
             existing.is_active = True
             db.commit()
             db.refresh(existing)
@@ -85,7 +88,7 @@ def seed_admin(db: Session = Depends(get_db)):
         admin = User(
             username="admin",
             email="admin@smartqueue.ai",
-            hashed_password=get_password_hash("admin123"),
+            hashed_password=admin_hash,
             full_name="System Admin",
             phone="0000000000",
             role=UserRole.ADMIN,

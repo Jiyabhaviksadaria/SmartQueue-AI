@@ -80,7 +80,7 @@ def seed_admin_user():
             admin = User(
                 username="admin",
                 email="admin@smartqueue.ai",
-                hashed_password=get_password_hash("admin123"),
+                hashed_password="$2b$12$W44EQGxjBISmmQQCZ1EKsu1v8DpiiPwtQVAcriNPlxJZm6agpOu6a",
                 full_name="System Admin",
                 phone="0000000000",
                 role=UserRole.ADMIN,
