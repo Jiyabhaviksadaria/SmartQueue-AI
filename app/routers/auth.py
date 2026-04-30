@@ -58,29 +58,53 @@ def login(
 def seed_admin(db: Session = Depends(get_db)):
     """
     One-time endpoint to create the default admin user on the server.
-    Safe to call multiple times — skips if admin already exists.
+    Safe to call multiple times — idempotent.
     """
+    import traceback
     from app.models import UserRole
-    existing = db.query(User).filter(User.username == "admin").first()
-    if existing:
-        # Update role and password to ensure it's correct
-        existing.role = UserRole.ADMIN
-        existing.hashed_password = get_password_hash("admin123")
-        existing.is_active = True
-        db.commit()
-        return {"message": "Admin user already exists — password reset to admin123", "username": "admin"}
+    from app.database.db import engine, Base
+    from app.models import Base as ModelBase
 
-    admin = User(
-        username="admin",
-        email="admin@smartqueue.ai",
-        hashed_password=get_password_hash("admin123"),
-        full_name="System Admin",
-        phone="0000000000",
-        role=UserRole.ADMIN,
-        is_active=True,
-        is_senior_citizen=False,
-        is_vip=False
-    )
-    db.add(admin)
-    db.commit()
-    return {"message": "Admin user created successfully", "username": "admin", "password": "admin123"}
+    try:
+        # Ensure all tables exist (important on fresh Render DB)
+        ModelBase.metadata.create_all(bind=engine)
+
+        existing = db.query(User).filter(User.username == "admin").first()
+        if existing:
+            existing.role = UserRole.ADMIN
+            existing.hashed_password = get_password_hash("admin123")
+            existing.is_active = True
+            db.commit()
+            db.refresh(existing)
+            return {
+                "status": "updated",
+                "message": "Admin user already exists — role enforced and password reset to admin123",
+                "username": "admin"
+            }
+
+        admin = User(
+            username="admin",
+            email="admin@smartqueue.ai",
+            hashed_password=get_password_hash("admin123"),
+            full_name="System Admin",
+            phone="0000000000",
+            role=UserRole.ADMIN,
+            is_active=True,
+            is_senior_citizen=False,
+            is_vip=False
+        )
+        db.add(admin)
+        db.commit()
+        db.refresh(admin)
+        return {
+            "status": "created",
+            "message": "Admin user created successfully",
+            "username": "admin",
+            "password": "admin123"
+        }
+
+    except Exception as e:
+        db.rollback()
+        error_detail = traceback.format_exc()
+        print(f"[seed-admin ERROR] {error_detail}")
+        raise HTTPException(status_code=500, detail=f"Seed failed: {str(e)}")
