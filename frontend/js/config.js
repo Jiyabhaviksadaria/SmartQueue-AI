@@ -4,7 +4,7 @@ const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hos
 
 const BACKEND_URL = IS_LOCAL
     ? 'http://localhost:8000'
-    : 'https://smartqueue-ai.onrender.com';   // ← UPDATE this after Render deployment
+    : 'https://smartqueue-ai-5wf2.onrender.com'; // ✅ Render deployment URL
 
 const API_CONFIG = {
     BASE_URL: BACKEND_URL,
