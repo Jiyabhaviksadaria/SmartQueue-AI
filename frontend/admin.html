@@ -388,7 +388,7 @@
             if (!note.trim()) { alert('Please enter a resolution note.'); return; }
 
             try {
-                const res = await fetch(`http://localhost:8000/api/grievance/${grievanceId}/${action}`, {
+                const res = await fetch(`https://smartqueue-ai-5wf2.onrender.com/api/grievance/${grievanceId}/${action}`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
