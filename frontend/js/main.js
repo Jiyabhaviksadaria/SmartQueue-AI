@@ -320,7 +320,7 @@ console.log('🚀 SmartQueue AI initialized');
 
 SmartQueue.generateToken = async function (formData) {
   try {
-    const response = await fetch("http://127.0.0.1:8000/generate-token/", {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/generate-token/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

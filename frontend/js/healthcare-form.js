@@ -148,10 +148,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
-            const dateStr = tomorrow.toISOString().split('T')[0];
+            const year = tomorrow.getFullYear();
+            const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+            const day = String(tomorrow.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
 
             const res = await fetch(
-                `https://smartqueue-ai-5wf2.onrender.com/api/slots/available?date_str=${dateStr}&department=${department}&domain=healthcare`
+                `${API_CONFIG.BASE_URL}/api/slots/available?date_str=${dateStr}&department=${department}&domain=healthcare`
             );
             const data = await res.json();
 
@@ -261,7 +264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             sendOtpBtn.textContent = '⏳ Sending...';
 
             try {
-                const res = await fetch('https://smartqueue-ai-5wf2.onrender.com/api/slots/otp/send', {
+                const res = await fetch(`${API_CONFIG.BASE_URL}/api/slots/otp/send`, {
                     method:  'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body:    JSON.stringify({ phone })
@@ -295,7 +298,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             verifyBtn.textContent = '⏳ Verifying...';
 
             try {
-                const res = await fetch('https://smartqueue-ai-5wf2.onrender.com/api/slots/otp/verify', {
+                const res = await fetch(`${API_CONFIG.BASE_URL}/api/slots/otp/verify`, {
                     method:  'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body:    JSON.stringify({ phone: formData.phone, otp })
@@ -383,7 +386,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (formData.selectedSlot) {
                 // ── Advance booking path ──────────────────────────────────
-                const res = await fetch('https://smartqueue-ai-5wf2.onrender.com/api/slots/book', {
+                const res = await fetch(`${API_CONFIG.BASE_URL}/api/slots/book`, {
                     method:  'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

@@ -1,7 +1,9 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
+import os
 
 from app.database.db import engine, Base, get_db
 from app.routers import auth, tokens, queues, analytics, healthcare, banking, admin
@@ -125,7 +127,8 @@ app.add_middleware(
         "http://127.0.0.1:8000",
         "http://localhost:5500",
         "http://127.0.0.1:5500",
-        "https://smart-queue-ai.vercel.app"
+        "https://smart-queue-ai.vercel.app",
+        "https://smart-queue-ai-eta.vercel.app"
     ], 
     allow_credentials=True,
     allow_methods=["*"], 
@@ -143,7 +146,14 @@ app.include_router(slots_router,       prefix="/api/slots",       tags=["Slots"]
 app.include_router(grievance_router,   prefix="/api/grievance",   tags=["Grievance"])
 
 
-@app.get("/")
+# Mount static files (frontend)
+frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
+if os.path.exists(frontend_path):
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="static")
+
+
+# Fallback root endpoint
+@app.get("/api/")
 async def root():
     return {"message": "SmartQueue AI", "version": "2.0.0", "status": "operational"}
 

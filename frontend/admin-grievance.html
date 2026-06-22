@@ -90,8 +90,9 @@
     </table>
   </div>
 
+  <script src="js/config.js"></script>
   <script>
-    const apiBase = "http://127.0.0.1:8080";
+    const apiBase = API_CONFIG.BASE_URL;
     const token = "YOUR_ADMIN_JWT_HERE"; // TODO: replace with real token
     const tableBody = document.querySelector('#grievanceTable tbody');
     const messageDiv = document.getElementById('message');

@@ -329,7 +329,7 @@
             statusMsg.textContent = '';
 
             try {
-                const res = await fetch('https://smartqueue-ai-5wf2.onrender.com/api/grievance/submit', {
+                const res = await fetch(`${API_CONFIG.BASE_URL}/api/grievance/submit`, {
                     method:  'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -356,7 +356,7 @@
 
         async function checkAppealStatus(tokenId) {
             try {
-                const res  = await fetch(`https://smartqueue-ai-5wf2.onrender.com/api/grievance/status/${tokenId}`);
+                const res  = await fetch(`${API_CONFIG.BASE_URL}/api/grievance/status/${tokenId}`);
                 const data = await res.json();
                 if (!data.has_grievance) return;
 

@@ -68,7 +68,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Download token
     document.getElementById('download-token-btn').addEventListener('click', () => {
-        downloadTokenAsImage(tokenData);
+        try {
+            downloadTokenAsImage(tokenData);
+        } catch (error) {
+            console.error('Download error:', error);
+            if (window.showToast) {
+                showToast('Download Failed', 'Unable to generate token image. Please try again.', 'error', '✕');
+            } else {
+                alert('Unable to download token. Check console for errors.');
+            }
+        }
     });
 
     // Toast notification functions
@@ -171,6 +180,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// Helper function to draw rounded rectangles (cross-browser compatible)
+function roundRect(ctx, x, y, width, height, radius = 0) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+}
+
 function downloadTokenAsImage(tokenData) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -186,22 +210,19 @@ function downloadTokenAsImage(tokenData) {
 
     // Card
     ctx.fillStyle = 'rgba(30, 30, 50, 0.9)';
-    ctx.beginPath();
-    ctx.roundRect(40, 40, 520, 720, 20);
+    roundRect(ctx, 40, 40, 520, 720, 20);
     ctx.fill();
 
     // Border
     const isHealthcare = tokenData.type === 'healthcare';
     ctx.strokeStyle = isHealthcare ? '#06d6a0' : '#ffd60a';
     ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.roundRect(40, 40, 520, 720, 20);
+    roundRect(ctx, 40, 40, 520, 720, 20);
     ctx.stroke();
 
     // Header
     ctx.fillStyle = isHealthcare ? 'rgba(6, 214, 160, 0.2)' : 'rgba(255, 214, 10, 0.2)';
-    ctx.beginPath();
-    ctx.roundRect(200, 60, 200, 40, 20);
+    roundRect(ctx, 200, 60, 200, 40, 20);
     ctx.fill();
 
     ctx.fillStyle = isHealthcare ? '#06d6a0' : '#ffd60a';
@@ -232,8 +253,7 @@ function downloadTokenAsImage(tokenData) {
     let yPos = 300;
     details.forEach(detail => {
         ctx.fillStyle = 'rgba(10, 10, 20, 0.5)';
-        ctx.beginPath();
-        ctx.roundRect(60, yPos, 480, 60, 10);
+        roundRect(ctx, 60, yPos, 480, 60, 10);
         ctx.fill();
 
         ctx.fillStyle = '#666';
@@ -250,8 +270,7 @@ function downloadTokenAsImage(tokenData) {
 
     // Wait time
     ctx.fillStyle = 'rgba(168, 85, 247, 0.1)';
-    ctx.beginPath();
-    ctx.roundRect(60, 600, 480, 100, 15);
+    roundRect(ctx, 60, 600, 480, 100, 15);
     ctx.fill();
 
     ctx.fillStyle = '#a855f7';
@@ -273,4 +292,9 @@ function downloadTokenAsImage(tokenData) {
     link.download = `Token-${tokenData.id}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
+    
+    // Show success message
+    if (window.showToast) {
+        showToast('Success!', `Token ${tokenData.id} downloaded successfully`, 'success', '✓');
+    }
 }

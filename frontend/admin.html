@@ -305,7 +305,7 @@
 
             btn.disabled = true;
             try {
-                const result = await fetch(`http://localhost:8000/api/admin/tokens/${tokenId}/reject-emergency`, {
+                const result = await fetch(`${API_CONFIG.BASE_URL}/api/admin/tokens/${tokenId}/reject-emergency`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
@@ -336,7 +336,7 @@
         async function loadGrievances() {
             const tbody = document.getElementById('grievance-table-body');
             try {
-                const res  = await fetch('http://localhost:8000/api/grievance/list?status=pending', {
+                const res  = await fetch(`${API_CONFIG.BASE_URL}/api/grievance/list?status=pending`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
                 });
                 const data = await res.json();
@@ -388,7 +388,7 @@
             if (!note.trim()) { alert('Please enter a resolution note.'); return; }
 
             try {
-                const res = await fetch(`https://smartqueue-ai-5wf2.onrender.com/api/grievance/${grievanceId}/${action}`, {
+                const res = await fetch(`${API_CONFIG.BASE_URL}/api/grievance/${grievanceId}/${action}`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
